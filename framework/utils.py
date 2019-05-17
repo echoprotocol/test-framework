@@ -2,6 +2,8 @@ STARTING_RPC_PORT = 8090
 STARTING_P2P_PORT = 13375
 GENERATE_GENESIS_NODE_NUM = 1000
 DEFAULT_DATA_DIR = './data'
+DEFAULT_SYSTEM_GENESIS_PATH = '/tmp/echo_test_framework/genesis.json'
+DEFAULT_GENESIS_PATH = '{}/genesis.json'.format(DEFAULT_DATA_DIR)
 DEFAULT_NETWORK_NODE_COUNT = 2
 NETWORK_CONNECTION_MODES = ['all', 'chain', None]
 DEFAULT_NETWORK_CONNECTION_MODE = 'all'
@@ -13,7 +15,6 @@ DEFAULT_ASSET_SYMBOL = 'ECHO'
 
 ECHO_FOLDER = '/home/evasilev/Documents/Projects/echo'
 NODE_PATH = '{}/bin/echo_node'.format(ECHO_FOLDER)
-GENESIS_PATH = 'genesis.json'
 API_ACCESS = '{}/access.json'.format(ECHO_FOLDER)
 
 

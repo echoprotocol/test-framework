@@ -2,7 +2,7 @@ import os
 import shutil
 import subprocess
 import signal
-from utils import STARTING_RPC_PORT, STARTING_P2P_PORT
+from .utils import STARTING_RPC_PORT, STARTING_P2P_PORT
 
 
 class Node:

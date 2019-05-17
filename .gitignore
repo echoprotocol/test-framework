@@ -2,7 +2,7 @@
 .vscode/
 
 # Generated data
-.data/
+data/
 genesis.json
 
 # Byte-compiled / optimized / DLL files

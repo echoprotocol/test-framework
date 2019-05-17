@@ -1,19 +1,24 @@
 import json
+import os
+import time
 from random import randint
-from objects import Account
-from node import Node
-from utils import DEFAULT_DATA_DIR, DEFAULT_NETWORK_NODE_COUNT, DEFAULT_NETWORK_CONNECTION_MODE, \
+from .objects import Account, GenesisConfig
+from .node import Node
+from .utils import DEFAULT_DATA_DIR, DEFAULT_NETWORK_NODE_COUNT, DEFAULT_NETWORK_CONNECTION_MODE, \
     NETWORK_CONNECTION_MODES, DEFAULT_ASSET_DISTRIBUTION_TYPE, ASSET_DISTRIBUTION_TYPES, \
-    DEFAULT_ASSET_TOTAL_AMOUNT, DEFAULT_ACCOUNT_COUNT, DEFAULT_ASSET_SYMBOL
-from echopy import Echo
+    DEFAULT_ASSET_TOTAL_AMOUNT, DEFAULT_ACCOUNT_COUNT, DEFAULT_ASSET_SYMBOL, \
+    DEFAULT_GENESIS_PATH, DEFAULT_SYSTEM_GENESIS_PATH
+from .echopy_wrapper import EchopyWrapper
 
 
 class EchoTest:
 
     def __init__(self):
         assert self.node_path
-        assert self.genesis_path
         assert self.api_access
+
+        if not hasattr(self, 'genesis_path'):
+            self.genesis_path = DEFAULT_GENESIS_PATH
 
         if not hasattr(self, 'data_dir'):
             self.data_dir = DEFAULT_DATA_DIR
@@ -37,7 +42,14 @@ class EchoTest:
         if not hasattr(self, 'asset_symbol'):
             self.asset_symbol = DEFAULT_ASSET_SYMBOL
 
-        self.echopy = Echo()
+        self._system_genesis_path = DEFAULT_SYSTEM_GENESIS_PATH
+        os.makedirs(self._system_genesis_path[:self._system_genesis_path.rfind('/')], exist_ok=True)
+
+        self.genesis = GenesisConfig()
+        self.genesis.generate_from_node(node_path=self.node_path, path_to_save=self._system_genesis_path)
+        self.genesis.load_from_file(self._system_genesis_path)
+
+        self.echopy = EchopyWrapper()
 
     def _initialize_network(self):
         self.nodes = []
@@ -63,7 +75,8 @@ class EchoTest:
 
     def _read_accounts_info(self):
         self.accounts = []
-        with open(self.genesis_path, 'r') as file:
+        self.genesis.save_to_file(self._system_genesis_path)
+        with open(self._system_genesis_path, 'r') as file:
             genesis_config = json.loads(file.read())
             initial_balances = {initial_balance["owner"]: [
                 initial_balance["amount"], initial_balance["asset_symbol"]]
@@ -89,6 +102,9 @@ class EchoTest:
         self._read_accounts_info()
         for node in self.nodes:
             node.start()
+
+        time.sleep(1)
+        self.genesis.save_to_file(self.genesis_path)
 
     def stop_network(self):
         for node in self.nodes:

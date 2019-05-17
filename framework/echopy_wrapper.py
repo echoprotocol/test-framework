@@ -3,14 +3,15 @@ import random
 
 from echopy import Echo
 from echopy.echobase.account import PrivateKey
-from objects import Account, AssetDistribution, EqualDistribution, RandomDistribution, FixedDistribution
 
-from utils import ASSET_DISTRIBUTION_TYPES, DEFAULT_ASSET_DISTRIBUTION_TYPE, DEFAULT_ASSET_TOTAL_AMOUNT, DEFAULT_ASSET_SYMBOL
+from .objects import Account, AssetDistribution, EqualDistribution, RandomDistribution, FixedDistribution
+from .utils import ASSET_DISTRIBUTION_TYPES, DEFAULT_ASSET_DISTRIBUTION_TYPE, DEFAULT_ASSET_TOTAL_AMOUNT, DEFAULT_ASSET_SYMBOL
 
 
 class EchopyWrapper:
     def __init__(self):
-        self.echopy = Echo()
+        self._echopy = Echo()
+        self.brain_key = self._echopy.brain_key
 
     def generate_account(self, name=None, private_key=None, public_key=None, lifetime_status=True,
                          asset_amount=None, asset_symbol=DEFAULT_ASSET_SYMBOL):
@@ -21,7 +22,7 @@ class EchopyWrapper:
             private_key_object = PrivateKey(private_key)
             public_key = str(private_key_object.pubic_key)
         elif not public_key and not private_key:
-            brain_key = self.echopy.brain_key()
+            brain_key = self.brain_key()
             private_key = brain_key.get_private_key_base58()
             public_key = brain_key.get_public_key_base58()
 
@@ -36,8 +37,8 @@ class EchopyWrapper:
     def generate_accounts(self, count, asset_distribution_type=DEFAULT_ASSET_DISTRIBUTION_TYPE,
                           asset_amount=DEFAULT_ASSET_TOTAL_AMOUNT, asset_symbol=DEFAULT_ASSET_SYMBOL):
 
-        assert len(count)
-        assert isinstance(asset_distribution_type, [AssetDistribution, str])
+        assert count
+        assert isinstance(asset_distribution_type, (AssetDistribution, str))
 
         if isinstance(asset_distribution_type, str):
             if asset_distribution_type == 'equal':
@@ -49,21 +50,15 @@ class EchopyWrapper:
             else:
                 raise Exception('For custom asset distibutions use AssetDistribution class objects')
 
-        elif isinstance(ass)
+        elif isinstance(asset_distribution_type, AssetDistribution):
+            if asset_distribution_type.count > count:
+                raise Exception('AssetDistribution object have count value more than accounts count')
+            distribution = asset_distribution_type
 
+        assets = distribution.get_assets()
+        accounts = [self.generate_account(asset_amount=asset, asset_symbol=asset_symbol) for asset in assets]
 
-            for account in accounts:
-                account.add_initial_balance(asset_amount, self.asset_symbol)
-
-
-
-
-
-
-
-
-
-
+        return accounts
 
 
     def distribute_asset(self, accounts):

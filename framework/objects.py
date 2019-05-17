@@ -1,8 +1,8 @@
 import json
 from random import randint, random
 import time
-from utils import DEFAULT_GENESIS_ECHORAND_CONFIG, DEFAULT_GENESIS_SIDECHAIN_CONFIG, GENERATE_GENESIS_NODE_NUM, DEFAULT_ASSET_TOTAL_AMOUNT
-from node import Node
+from .utils import DEFAULT_GENESIS_ECHORAND_CONFIG, DEFAULT_GENESIS_SIDECHAIN_CONFIG, GENERATE_GENESIS_NODE_NUM, DEFAULT_ASSET_TOTAL_AMOUNT
+from .node import Node
 
 
 class GenesisConfig:
@@ -14,6 +14,7 @@ class GenesisConfig:
     def generate_from_node(self, node_path, path_to_save):
         node = Node(node_path=node_path, node_num=GENERATE_GENESIS_NODE_NUM)
         node.generate_genesis(path_to_save)
+
         time.sleep(1)
 
         with open(path_to_save, 'r') as file:
