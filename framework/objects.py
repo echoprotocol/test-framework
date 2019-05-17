@@ -45,13 +45,14 @@ class Account:
         self.lifetime_status = lifetime_status
         self.private_key = private_key
         self.public_key = public_key
+        self.initial_balances = []
         if asset_amount:
-            self.initial_balance = InitialBalance(owner=self.public_key,
-                                                  amount=asset_amount,
-                                                  asset_symbol=asset_symbol)
+            self.initial_balances.append(InitialBalance(owner=self.public_key,
+                                                        amount=asset_amount,
+                                                        asset_symbol=asset_symbol))
 
     @property
-    def json(self):
+    def genesis_format(self):
         account_dict = {'name': self.name, 'is_lifetime_member': self.lifetime_status,
                         'active_key': self.public_key, 'ed_key': self.public_key}
         if self.private_key:
@@ -61,9 +62,9 @@ class Account:
 
     def add_initial_balance(self, amount, asset_symbol='ECHO'):
         if amount:
-            self.initial_balance = InitialBalance(owner=self.public_key,
-                                                  amount=amount,
-                                                  asset_symbol=asset_symbol)
+            self.initial_balances.append(InitialBalance(owner=self.public_key,
+                                                        amount=amount,
+                                                        asset_symbol=asset_symbol))
 
 
 class InitialBalance:
@@ -77,7 +78,7 @@ class InitialBalance:
         self.asset_symbol = asset_symbol
 
     @property
-    def json(self):
+    def genesis_format(self):
         return self.__dict__
 
 

@@ -49,10 +49,11 @@ class EchoTest:
         self.genesis.generate_from_node(node_path=self.node_path, path_to_save=self._system_genesis_path)
         self.genesis.load_from_file(self._system_genesis_path)
 
+        self.nodes = []
+
         self.echopy = EchopyWrapper()
 
     def _initialize_network(self):
-        self.nodes = []
         seed_node_arguments = [[] for _ in range(self.node_count)]
 
         if self.connection_mode == 'all':
@@ -102,8 +103,6 @@ class EchoTest:
         self._read_accounts_info()
         for node in self.nodes:
             node.start()
-
-        time.sleep(1)
         self.genesis.save_to_file(self.genesis_path)
 
     def stop_network(self):
