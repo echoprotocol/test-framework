@@ -64,7 +64,7 @@ class Node:
                 if seed_node < STARTING_P2P_PORT:
                     seed_node += STARTING_P2P_PORT
                 command += ' --seed-node=127.0.0.1:{}'.format(seed_node)
-        command += ' --start-echorand'
+        command += ' --start-echorand --resync-blockchain'
         subprocess.Popen(command, shell=True)
 
     def stop(self):

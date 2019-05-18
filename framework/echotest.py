@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from random import randint
+from functools import partial
 from .objects import Account, GenesisConfig
 from .node import Node
 from .utils import DEFAULT_DATA_DIR, DEFAULT_NETWORK_NODE_COUNT, DEFAULT_NETWORK_CONNECTION_MODE, \
@@ -50,8 +50,10 @@ class EchoTest:
         self.genesis.load_from_file(self._system_genesis_path)
 
         self.nodes = []
-
         self.echopy = EchopyWrapper()
+
+        self._done = False
+        self._status = None
 
     def _initialize_network(self):
         seed_node_arguments = [[] for _ in range(self.node_count)]
@@ -104,7 +106,95 @@ class EchoTest:
         for node in self.nodes:
             node.start()
         self.genesis.save_to_file(self.genesis_path)
+        time.sleep(0.5)
+        self.echopy.connect(self.nodes[0])  # Default connection to first node
+        self._run_callbacks()
 
     def stop_network(self):
         for node in self.nodes:
             node.stop()
+
+    def _update_block_head_num(self):
+        actual_head_block_num = self.echopy.api.database.get_dynamic_global_properties()['head_block_number']
+        if actual_head_block_num > self._head_block_num:
+            self._head_block_num = actual_head_block_num
+            return True
+        return False
+
+    def _run_callbacks(self):
+        has_finalize_callbacks = hasattr(self, '_finalize_callbacks')
+        has_timeout_callbacks = hasattr(self, '_timeout_callbacks')
+        has_interval_callbacks = hasattr(self, '_interval_callbacks')
+        assert(has_finalize_callbacks)
+        needed_total_agrees = sum([len(self._finalize_callbacks[x]) for x in self._finalize_callbacks])
+        print(needed_total_agrees)
+        if has_timeout_callbacks or has_interval_callbacks:
+            self._head_block_num = 0
+            while True:
+                time.sleep(0.5)
+
+                if self._update_block_head_num():
+
+                    if has_timeout_callbacks:
+                        if self._head_block_num in self._timeout_callbacks:
+                            for callback in self._timeout_callbacks[self._head_block_num]:
+                                callback()
+
+                    if has_interval_callbacks:
+                        for block_delimiter in self._interval_callbacks:
+                            if not self._head_block_num % block_delimiter and self._head_block_num > 0:
+                                for callback in self._interval_callbacks[block_delimiter]:
+                                    callback()
+
+                    for block_num in self._finalize_callbacks:
+                        if self._head_block_num in self._finalize_callbacks:
+                            for callback in self._finalize_callbacks[self._head_block_num]:
+                                self._finalize_results.append(callback())
+
+                    if len(self._finalize_results) == needed_total_agrees:
+                        self._done = True
+                        self._status = True
+
+                if self._done:
+                    break
+
+    @staticmethod
+    def block_timeout_callback(block_num, finalize=False):
+
+        def inner_function(function):
+
+            def add_callback(*args):
+                if not finalize:
+                    if not hasattr(args[0], '_timeout_callbacks'):
+                        args[0]._timeout_callbacks = {}
+
+                    if block_num not in args[0]._timeout_callbacks:
+                        args[0]._timeout_callbacks.update({block_num: []})
+                    args[0]._timeout_callbacks[block_num].append(partial(function, args))
+                else:
+                    if not hasattr(args[0], '_finalize_callbacks'):
+                        args[0]._finalize_callbacks = {}
+                        args[0]._finalize_results = []
+
+                    if block_num not in args[0]._finalize_callbacks:
+                        args[0]._finalize_callbacks.update({block_num: []})
+                    args[0]._finalize_callbacks[block_num].append(partial(function, args))
+
+            return add_callback
+        return inner_function
+
+    @staticmethod
+    def block_interval_callback(block_num):
+
+        def inner_function(function):
+
+            def add_callback(*args):
+                if not hasattr(args[0], '_interval_callbacks'):
+                    args[0]._interval_callbacks = {}
+
+                if block_num not in args[0]._interval_callbacks:
+                    args[0]._interval_callbacks.update({block_num: []})
+                args[0]._interval_callbacks[block_num].append(partial(function, args))
+
+            return add_callback
+        return inner_function

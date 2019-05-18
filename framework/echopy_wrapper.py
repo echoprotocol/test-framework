@@ -4,14 +4,20 @@ import random
 from echopy import Echo
 from echopy.echobase.account import PrivateKey
 
+from .node import Node
 from .objects import Account, AssetDistribution, EqualDistribution, RandomDistribution, FixedDistribution
-from .utils import ASSET_DISTRIBUTION_TYPES, DEFAULT_ASSET_DISTRIBUTION_TYPE, DEFAULT_ASSET_TOTAL_AMOUNT, DEFAULT_ASSET_SYMBOL
+from .utils import ASSET_DISTRIBUTION_TYPES, DEFAULT_ASSET_DISTRIBUTION_TYPE,\
+    DEFAULT_ASSET_TOTAL_AMOUNT, DEFAULT_ASSET_SYMBOL
 
 
-class EchopyWrapper:
+class EchopyWrapper(Echo):
     def __init__(self):
-        self._echopy = Echo()
-        self.brain_key = self._echopy.brain_key
+        super().__init__()
+
+    def connect(self, node):
+        assert isinstance(node, (str, Node))
+        url = 'ws://127.0.0.1:{}'.format(node.rpc_port)
+        self.api.connect(node) if isinstance(node, str) else self.api.connect(url)
 
     def generate_account(self, name=None, private_key=None, public_key=None, lifetime_status=True,
                          asset_amount=None, asset_symbol=DEFAULT_ASSET_SYMBOL):
@@ -34,51 +40,43 @@ class EchopyWrapper:
 
         return Account(**account_args)
 
-    def generate_accounts(self, count, asset_distribution_type=DEFAULT_ASSET_DISTRIBUTION_TYPE,
-                          asset_amount=DEFAULT_ASSET_TOTAL_AMOUNT, asset_symbol=DEFAULT_ASSET_SYMBOL):
+    def generate_accounts(self, count, asset_distribution_type=[DEFAULT_ASSET_DISTRIBUTION_TYPE],
+                          asset_amount=[DEFAULT_ASSET_TOTAL_AMOUNT], asset_symbol=[DEFAULT_ASSET_SYMBOL]):
+
+        if not isinstance(asset_distribution_type, list):
+            asset_distribution_type = [asset_distribution_type]
+
+        if not isinstance(asset_amount, list):
+            asset_amount = [asset_amount]
+
+        if not isinstance(asset_symbol, list):
+            asset_symbol = [asset_symbol]
 
         assert count
-        assert isinstance(asset_distribution_type, (AssetDistribution, str))
+        accounts = [self.generate_account() for _ in range(count)]
 
-        if isinstance(asset_distribution_type, str):
-            if asset_distribution_type == 'equal':
-                distribution = EqualDistribution(count, asset_amount)
-            elif asset_distribution_type == 'random':
-                distribution = RandomDistribution(count, asset_amount)
-            elif asset_distribution_type == 'fixed':
-                distribution = FixedDistribution(count, asset_amount)
+        for asset_num, asset_distribution in enumerate(asset_distribution_type):
+
+            assert isinstance(asset_distribution, (AssetDistribution, str))
+
+            if isinstance(asset_distribution, str) and asset_distribution in ASSET_DISTRIBUTION_TYPES:
+                if asset_distribution == 'equal':
+                    distribution = EqualDistribution(count, asset_amount[asset_num])
+                elif asset_distribution == 'random':
+                    distribution = RandomDistribution(count, asset_amount[asset_num])
+                elif asset_distribution == 'fixed':
+                    distribution = FixedDistribution(count, asset_amount[asset_num])
+
+            elif isinstance(asset_distribution, AssetDistribution):
+                if asset_distribution_type.count > count:
+                    raise Exception('AssetDistribution object have count value more than accounts count')
+                distribution = asset_distribution
+
             else:
                 raise Exception('For custom asset distibutions use AssetDistribution class objects')
 
-        elif isinstance(asset_distribution_type, AssetDistribution):
-            if asset_distribution_type.count > count:
-                raise Exception('AssetDistribution object have count value more than accounts count')
-            distribution = asset_distribution_type
-
-        assets = distribution.get_assets()
-        accounts = [self.generate_account(asset_amount=asset, asset_symbol=asset_symbol) for asset in assets]
-
-        return accounts
-
-
-    def distribute_asset(self, accounts):
-        assert len(accounts)
-
-        if self.asset_distribution_type == 'equal':
-            asset_amount = self.asset_amount // len(accounts)
-            for account in accounts:
-                account.add_initial_balance(asset_amount, self.asset_symbol)
-        elif self.asset_distribution_type == 'random':
-            for account in accounts:
-                asset_amount = randint(0, self.asset_amount)
-                account.add_initial_balance(asset_amount, self.asset_symbol)
-        elif self.asset_distribution_type == 'fixed':
-            if not isinstance(self.asset_amount, list):
-                self.asset_amount = list(self.asset_amount)
-
-            assert len(self.asset_amount) <= len(accounts)
-
-            for account_num, asset_amount in enumerate(self.asset_amount):
-                accounts[account_num].add_initial_balance(asset_amount, self.asset_symbol)
+            assets = distribution.get_assets()
+            for account_num, asset in enumerate(assets):
+                accounts[account_num].add_initial_balance(asset, asset_symbol[asset_num])
 
         return accounts
