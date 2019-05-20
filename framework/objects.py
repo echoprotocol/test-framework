@@ -39,17 +39,19 @@ class GenesisConfig:
 class Account:
 
     def __init__(self, name, lifetime_status, public_key, private_key=None, account_id=None,
-                 asset_amount=None, asset_symbol='ECHO'):
+                 asset_amount=None, asset_symbol='ECHO', authorized_node=None):
         self.name = name
         self.id = account_id
         self.lifetime_status = lifetime_status
         self.private_key = private_key
         self.public_key = public_key
         self.initial_balances = []
+        self.authorized_node = authorized_node if authorized_node else None
         if asset_amount:
             self.initial_balances.append(InitialBalance(owner=self.public_key,
                                                         amount=asset_amount,
                                                         asset_symbol=asset_symbol))
+
 
     @property
     def genesis_format(self):

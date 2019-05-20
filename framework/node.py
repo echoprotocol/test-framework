@@ -1,5 +1,4 @@
 import os
-import shutil
 import subprocess
 import signal
 from .utils import STARTING_RPC_PORT, STARTING_P2P_PORT
@@ -21,6 +20,7 @@ class Node:
         self.genesis_path = genesis_path
         self.api_access = api_access
         self.data_dir = data_dir
+        self.authorized_command = ''
 
     def generate_genesis(self, path):
         if not self.node_path:
@@ -34,7 +34,12 @@ class Node:
 
         command = 'screen -S node{} -d -m {}'.format(self.node_num, self.node_path)
         command += ' --create-genesis-json {}'.format(path)
+
         subprocess.Popen(command, shell=True)
+
+    def authorize_account(self, account):
+        self.authorized_command += ' --account-info \[\\\"{}\\\",\\\"{}\\\"\]'.format(account.id,
+                                                                                      account.private_key)
 
     def start(self):
         if not self.node_path:
@@ -50,14 +55,14 @@ class Node:
             self.seed_nodes = [self.seed_nodes]
 
         data_dir = '{}/node{}'.format(self.data_dir, self.node_num)
-        if os.path.exists(data_dir):
-            shutil.rmtree(data_dir)
-        os.makedirs(data_dir)
 
         command = 'screen -S node{} -d -m {} --echorand'.format(self.node_num, self.node_path)
         command += ' --rpc-endpoint=127.0.0.1:{} --p2p-endpoint=127.0.0.1:{}'.format(self.rpc_port, self.p2p_port)
         command += ' --data-dir={} --genesis-json {} --api-access {}'.format(data_dir, self.genesis_path,
                                                                              self.api_access)
+
+        if self.authorized_command:
+            command += self.authorized_command
 
         if self.seed_nodes:
             for seed_node in self.seed_nodes:

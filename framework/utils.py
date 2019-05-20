@@ -19,8 +19,8 @@ API_ACCESS = '{}/access.json'.format(ECHO_FOLDER)
 
 
 DEFAULT_GENESIS_ECHORAND_CONFIG = {
-    "_time_net_1mb": 3000,
-    "_time_net_256b": 1500,
+    "_time_net_1mb": 1000,
+    "_time_net_256b": 500,
     "_creator_count": 2,
     "_verifier_count": 7,
     "_ok_threshold": 5,
@@ -28,12 +28,22 @@ DEFAULT_GENESIS_ECHORAND_CONFIG = {
 }
 
 DEFAULT_GENESIS_SIDECHAIN_CONFIG = {
-    "echo_contract_id": "1.14.0",
-    "echo_vote_method": "7d310fba",
-    "echo_sign_method": "224e89de",
-    "echo_transfer_topic": "74c980d5dc214f02ed77d4e6c85f839efa386f2fb2f08a7102eb27b72316b7d0",
-    "echo_transfer_ready_topic": "b13dc7ed3b922a635e7756f98f1404ed221e7977cb0fbe7ad5ca1a8c0de7ed89",
-    "eth_contract_address": "ee7d89dbe8aaafbd1f5e7adc9992b66ad4076029",
-    "eth_committee_method": "ffffffff",
-    "eth_transfer_topic": "514bf7702a7d2aca90dcf3d947158aad29563a17c1dbdc76d2eae84c22420142"
+    "eth_contract_address": "22ff2e2c3c7015d4948073742d6e3c50d4d8c55f",
+    "eth_committee_update_method": {
+        "method": "ffffffff",
+        "gas": 1000000
+    },
+    "eth_gen_address_method": {
+        "method": "ffcc34fd",
+        "gas": 1000000
+    },
+    "eth_withdraw_method": {
+        "method": "e21bd1ce",
+        "gas": 1000000
+    },
+    "eth_committee_updated_topic": "514bf7702a7d2aca90dcf3d947158aad29563a17c1dbdc76d2eae84c22420142",
+    "eth_gen_address_topic": "1855f12530a368418f19b2b15227f19225915b8113c7e17d4c276e2a10225039",
+    "eth_deposit_topic": "77227a376c41a7533c952ebde8d7b44ee36c7a6cec0d3448f1a1e4231398356f",
+    "eth_withdraw_topic": "481c4276b65cda86cfcd095776a5e290a13932f5bed47d4f786b0ffc4d0d76ae",
+    "ETH_asset_id": "1.3.1"
 }
