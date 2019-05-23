@@ -8,7 +8,7 @@ class Node:
 
     def __init__(self, node_path=None, genesis_path=None, api_access=None,
                  node_num=0, seed_nodes=None, accounts_info=None,
-                 committee_accounts=None, data_dir=None):
+                 committee_accounts=None, data_dir=None, start_echorand=False):
 
         self.node_path = node_path
         self.node_num = node_num
@@ -21,6 +21,37 @@ class Node:
         self.api_access = api_access
         self.data_dir = data_dir
         self.authorized_command = ''
+        self._start_echorand = start_echorand
+
+    @property
+    def node_path(self):
+        if not self._node_path:
+            raise("'node path' is needed")
+        return self._node_path
+
+    @node_path.setter
+    def node_path(self, node_path):
+        self._node_path = node_path
+
+    @property
+    def genesis_path(self):
+        if not self._genesis_path:
+            raise("'genesis_path' is needed")
+        return self._genesis_path
+
+    @genesis_path.setter
+    def genesis_path(self, genesis_path):
+        self._genesis_path = genesis_path
+
+    @property
+    def api_access(self):
+        if not self._api_access:
+            raise("'api_access' is needed")
+        return self._api_access
+
+    @api_access.setter
+    def api_access(self, api_access):
+        self._api_access = api_access
 
     def generate_genesis(self, path):
         if not self.node_path:
@@ -38,19 +69,10 @@ class Node:
         subprocess.Popen(command, shell=True)
 
     def authorize_account(self, account):
-        self.authorized_command += ' --account-info \[\\\"{}\\\",\\\"{}\\\"\]'.format(account.id,
-                                                                                      account.private_key)
+        self.authorized_command += ' --account-info \[\\\"{}\\\",\\\"DET{}\\\"\]'.format(account.id,
+                                                                                         account.private_key)
 
     def start(self):
-        if not self.node_path:
-            raise("'node path' is needed")
-
-        if not self.genesis_path:
-            raise("'genesis_path' is needed")
-
-        if not self.api_access:
-            raise("'api_access' is needed")
-
         if self.seed_nodes is not None and not isinstance(self.seed_nodes, list):
             self.seed_nodes = [self.seed_nodes]
 
@@ -69,7 +91,9 @@ class Node:
                 if seed_node < STARTING_P2P_PORT:
                     seed_node += STARTING_P2P_PORT
                 command += ' --seed-node=127.0.0.1:{}'.format(seed_node)
-        command += ' --start-echorand --resync-blockchain'
+        command += ' --resync-blockchain'
+        if self._start_echorand:
+            command += ' --start-echorand'
         subprocess.Popen(command, shell=True)
 
     def stop(self):

@@ -7,7 +7,7 @@ from echopy.echobase.account import PrivateKey
 from .node import Node
 from .objects import Account, AssetDistribution, EqualDistribution, RandomDistribution, FixedDistribution
 from .utils import ASSET_DISTRIBUTION_TYPES, DEFAULT_ASSET_DISTRIBUTION_TYPE,\
-    DEFAULT_ASSET_TOTAL_AMOUNT, DEFAULT_ASSET_SYMBOL
+    DEFAULT_ASSET_SYMBOL, DEFAULT_ASSET_ID
 
 
 class EchopyWrapper(Echo):
@@ -40,8 +40,8 @@ class EchopyWrapper(Echo):
 
         return Account(**account_args)
 
-    def generate_accounts(self, count, asset_distribution_type=[DEFAULT_ASSET_DISTRIBUTION_TYPE],
-                          asset_amount=[DEFAULT_ASSET_TOTAL_AMOUNT], asset_symbol=[DEFAULT_ASSET_SYMBOL]):
+    def generate_accounts(self, count, asset_amount, asset_distribution_type=[DEFAULT_ASSET_DISTRIBUTION_TYPE],
+                          asset_symbol=[DEFAULT_ASSET_SYMBOL], asset_id=[DEFAULT_ASSET_ID]):
 
         if not isinstance(asset_distribution_type, list):
             asset_distribution_type = [asset_distribution_type]
@@ -77,6 +77,7 @@ class EchopyWrapper(Echo):
 
             assets = distribution.get_assets()
             for account_num, asset in enumerate(assets):
-                accounts[account_num].add_initial_balance(asset, asset_symbol[asset_num])
+                accounts[account_num].add_initial_balance(asset, asset_id=asset_id[asset_num],
+                                                          asset_symbol=asset_symbol[asset_num])
 
         return accounts

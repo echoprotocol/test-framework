@@ -1,15 +1,19 @@
 import json
 import os
 import shutil
-import time
-from functools import partial
-from .objects import Account, GenesisConfig
+from time import sleep
+from datetime import datetime
+from .callbacks import block_timeout_callback
+from .objects import GenesisConfig, AssetDistribution
 from .node import Node
 from .utils import DEFAULT_DATA_DIR, DEFAULT_NETWORK_NODE_COUNT, DEFAULT_NETWORK_CONNECTION_MODE, \
     NETWORK_CONNECTION_MODES, DEFAULT_ASSET_DISTRIBUTION_TYPE, ASSET_DISTRIBUTION_TYPES, \
-    DEFAULT_ASSET_TOTAL_AMOUNT, DEFAULT_ACCOUNT_COUNT, DEFAULT_ASSET_SYMBOL, \
-    DEFAULT_GENESIS_PATH, DEFAULT_SYSTEM_GENESIS_PATH
+    DEFAULT_ACCOUNT_COUNT, DEFAULT_GENESIS_PATH, DEFAULT_SYSTEM_GENESIS_PATH, DEFAULT_ASSET_ID
 from .echopy_wrapper import EchopyWrapper
+
+
+def timestamp_to_datetime(timestamp):
+    return datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')
 
 
 class EchoTest:
@@ -18,38 +22,6 @@ class EchoTest:
         assert self.node_path
         assert self.api_access
 
-        if not hasattr(self, 'genesis_path'):
-            self.genesis_path = DEFAULT_GENESIS_PATH
-
-        if not hasattr(self, 'data_dir'):
-            self.data_dir = DEFAULT_DATA_DIR
-
-        if not hasattr(self, 'node_count'):
-            self.node_count = DEFAULT_NETWORK_NODE_COUNT
-
-        if not hasattr(self, 'connection_mode') or self.connection_mode not in NETWORK_CONNECTION_MODES:
-            self.connection_mode = DEFAULT_NETWORK_CONNECTION_MODE
-
-        if not hasattr(self, 'account_count'):
-            self.account_count = DEFAULT_ACCOUNT_COUNT
-
-        if not hasattr(self, 'asset_distribution_type') or \
-                self.asset_distribution_type not in ASSET_DISTRIBUTION_TYPES:
-                    self.asset_distribution_type = DEFAULT_ASSET_DISTRIBUTION_TYPE
-
-        if not hasattr(self, 'asset_amount'):
-            self.asset_amount = DEFAULT_ASSET_TOTAL_AMOUNT
-
-        if not hasattr(self, 'asset_symbol'):
-            self.asset_symbol = DEFAULT_ASSET_SYMBOL
-
-        if hasattr(self, 'account_authorization'):
-            assert len(self.account_authorization) <= self.account_count
-            assert max(self.account_authorization) < self.node_count
-            assert min(self.account_authorization) >= 0
-        else:
-            self.account_authorization = []
-
         self._system_genesis_path = DEFAULT_SYSTEM_GENESIS_PATH
         os.makedirs(self._system_genesis_path[:self._system_genesis_path.rfind('/')], exist_ok=True)
 
@@ -57,11 +29,90 @@ class EchoTest:
         self.genesis.generate_from_node(node_path=self.node_path, path_to_save=self._system_genesis_path)
         self.genesis.load_from_file(self._system_genesis_path)
 
+        self._done = False
+        self._status = None
+
         self.nodes = []
         self.echopy = EchopyWrapper()
 
-        self._done = False
-        self._status = None
+    @property
+    def data_dir(self):
+        if not hasattr(self, '_data_dir'):
+            self._data_dir = DEFAULT_DATA_DIR
+        return self._data_dir
+
+    @data_dir.setter
+    def data_dir(self, data_dir):
+        self._data_dir = data_dir
+
+    @property
+    def genesis_path(self):
+        if not hasattr(self, '_genesis_path'):
+            self._genesis_path = DEFAULT_GENESIS_PATH
+
+        return self._genesis_path
+
+    @genesis_path.setter
+    def genesis_path(self, genesis_path):
+        self._genesis_path = genesis_path
+
+    @property
+    def node_count(self):
+        if not hasattr(self, '_node_count'):
+            self._node_count = DEFAULT_NETWORK_NODE_COUNT
+        return self._node_count
+
+    @node_count.setter
+    def node_count(self, node_count):
+        self._node_count = node_count
+
+    @property
+    def connection_mode(self):
+        if not hasattr(self, '_connection_mode') or self._connection_mode not in NETWORK_CONNECTION_MODES:
+            self._connection_mode = DEFAULT_NETWORK_CONNECTION_MODE
+        return self._connection_mode
+
+    @connection_mode.setter
+    def connection_mode(self, connection_mode):
+        if connection_mode in NETWORK_CONNECTION_MODES:
+            self._connection_mode = connection_mode
+
+    @property
+    def account_count(self):
+        if not hasattr(self, '_account_count'):
+            self.account_count = DEFAULT_ACCOUNT_COUNT
+        return self._account_count
+
+    @account_count.setter
+    def account_count(self, account_count):
+        self._account_count = account_count
+
+    @property
+    def asset_distribution_type(self):
+        if not hasattr(self, '_asset_distribution_type'):
+            self.asset_distribution_type = DEFAULT_ASSET_DISTRIBUTION_TYPE
+
+        return self._asset_distribution_type
+
+    @asset_distribution_type.setter
+    def asset_distribution_type(self, asset_distribution_type):
+        if asset_distribution_type in ASSET_DISTRIBUTION_TYPES or\
+                isinstance(asset_distribution_type, AssetDistribution):
+            self._asset_distribution_type = asset_distribution_type
+
+    @property
+    def account_authorization(self):
+        if not hasattr(self, '_account_authorization'):
+            self._account_authorization = []
+
+        return self._account_authorization
+
+    @account_authorization.setter
+    def account_authorization(self, account_authorization):
+        assert len(account_authorization) <= self.account_count
+        assert max(account_authorization) < self.node_count
+        assert min(account_authorization) >= 0
+        self._account_authorization = account_authorization
 
     def _initialize_network(self):
         seed_node_arguments = [[] for _ in range(self.node_count)]
@@ -80,35 +131,39 @@ class EchoTest:
                     seed_node_arguments[i].append(i - 1)
 
         for node_num in range(self.node_count):
-            self.nodes.append(Node(node_path=self.node_path, genesis_path=self.genesis_path,
-                                   api_access=self.api_access, data_dir=self.data_dir,
-                                   node_num=node_num, seed_nodes=seed_node_arguments[node_num]))
+            node_args = {'node_path': self.node_path, 'genesis_path': self.genesis_path,
+                         'api_access': self.api_access, 'data_dir': self.data_dir,
+                         'node_num': node_num, 'seed_nodes': seed_node_arguments[node_num]}
+            if node_num == self.node_count - 1:
+                node_args.update({'start_echorand': True})
+            self.nodes.append(Node(**node_args))
 
     def _read_accounts_info(self):
-        self.accounts = []
         self.genesis.save_to_file(self._system_genesis_path)
+        accounts_names = [account.name for account in self.accounts]
         with open(self._system_genesis_path, 'r') as file:
             genesis_config = json.loads(file.read())
-            initial_balances = {initial_balance["owner"]: [
-                initial_balance["amount"], initial_balance["asset_symbol"]]
-                for initial_balance in genesis_config['initial_balances']}
             for account_num, account_info in enumerate(genesis_config['initial_accounts']):
                 name = account_info['name']
-                if 'init' not in name and name != 'nathan':
-                    account_args = {}
-                    account_args.update({'name': name})
-                    account_args.update({'account_id': '1.2.{}'.format(6 + account_num)})
-                    account_args.update({'lifetime_status': account_info['is_lifetime_member']})
-                    account_args.update({'public_key': account_info['active_key']})
-                    if account_args['public_key'] in initial_balances:
-                        account_args.update({'asset_amount':
-                                            initial_balances[account_args['public_key']][0]})
-                        account_args.update({'asset_symbol':
-                                            initial_balances[account_args['public_key']][1]})
-                    if 'private_key' in account_info:
-                        account_args.update({'private_key': account_info['private_key']})
+                account = self.accounts[accounts_names.index(name)]
+                account.id = '1.2.{}'.format(6 + account_num)
+                account.lifetime_status = account_info['is_lifetime_member']
+                account.public_key = account_info['active_key']
+                if 'private_key' in account_info:
+                    account.private_key = account_info['private_key']
 
-                    self.accounts.append(Account(**account_args))
+    def _update_accounts_info(self):
+        for account in self.accounts:
+            if len(account.initial_balances):
+                balances = self.echopy.api.database.get_balance_objects([account.public_key])
+                for balance in balances:
+                    balance_amount = str(balance['balance']['amount'])
+                    balance_asset_id = (balance['balance']['asset_id'])
+                    for initial_balance in account.initial_balances:
+                        first_condition = initial_balance.amount == balance_amount
+                        second_condition = initial_balance.asset_id == balance_asset_id
+                        if first_condition and second_condition:
+                            initial_balance.id = balance['id']
 
     def _authorize_accounts(self):
         for node in self.nodes:
@@ -123,22 +178,11 @@ class EchoTest:
                 shutil.rmtree(self.data_dir)
             data_dir = '{}/node{}'.format(self.data_dir, node.node_num)
             os.makedirs(data_dir)
-            with open('{}/config.ini'.format(data_dir), 'a+') as file:
-                for account_num, node_num in enumerate(self.account_authorization):
-                    if node.node_num == node_num:
-                        account = self.accounts[account_num]
-                        account_id = account.id
-                        private_key = account.private_key
-                        # new_string = 'ed-private-key = ["{}","DET{}"]\n'.format(public_key, private_key)
-                        new_string = 'account-info = ["{}","DET{}"]\n'.format(account_id, private_key)
-                        file.write(new_string)
-                        self.accounts[account_num]
-
             node.start()
 
-    def main(self):
+    def setup(self):
         """Needed to override."""
-        pass
+        raise NotImplementedError
 
     def _start_network(self):
         self._initialize_network()
@@ -146,8 +190,10 @@ class EchoTest:
         self._authorize_accounts()
         self._start_nodes()
         self.genesis.save_to_file(self.genesis_path)
-        time.sleep(1.5)
+        sleep(1)
         self.echopy.connect(self.nodes[0])  # Default connection to first node
+        self._update_accounts_info()
+        self._claim_balances()
         self._run_callbacks()
 
     def _stop_network(self):
@@ -155,25 +201,28 @@ class EchoTest:
             node.stop()
 
     def run(self):
-        if hasattr(self, 'main'):
-            self.main()
+        if hasattr(self, 'setup'):
+            self.setup()
         self._start_network()
         self._stop_network()
 
-    def _update_block_head_num(self):
+    def _update_block_head(self):
         actual_head_block_num = self.echopy.api.database.get_dynamic_global_properties()['head_block_number']
         if actual_head_block_num > self._head_block_num:
             self._head_block_num = actual_head_block_num
+            actual_head_block_time = timestamp_to_datetime(
+                self.echopy.api.database.get_block(actual_head_block_num)['timestamp']
+            )
+            self._head_block_year_diff = actual_head_block_time.year - self._head_block_time.year
+            self._head_block_time = actual_head_block_time
+
             return True
         return False
 
     def _run_callbacks(self):
-        def check_finalize_status(finalize_results):
-            if None in finalize_results:
-                for result_num, result in enumerate(finalize_results):
-                    finalize_results[result_num] = True if result is None else bool(result)
 
-            return False if False in finalize_results else True
+        def check_finalize_status(finalize_results):
+            return [not isinstance(result, str) for result in finalize_results]
 
         def run_callback(callback):
             assertion_error = None
@@ -191,74 +240,65 @@ class EchoTest:
         has_timeout_callbacks = hasattr(self, '_timeout_callbacks')
         has_interval_callbacks = hasattr(self, '_interval_callbacks')
         assert has_finalize_callbacks
-        needed_total_agrees = sum([len(self._finalize_callbacks[x]) for x in self._finalize_callbacks])
+        needed_total_finalizes = sum([len(self._finalize_callbacks[x]) for x in self._finalize_callbacks])
         if has_timeout_callbacks or has_interval_callbacks:
             self._head_block_num = 0
+            self._head_block_time = timestamp_to_datetime('1970-01-01T00:00:00')
+            self._head_block_year_diff = 0
             while True:
-                time.sleep(1)
+                sleep(0.5)
+                if self._update_block_head():
 
-                if self._update_block_head_num():
-
-                    if has_timeout_callbacks:
-                        if self._head_block_num in self._timeout_callbacks:
-                            for callback in self._timeout_callbacks[self._head_block_num]:
-                                callback()
-
-                    if has_interval_callbacks:
-                        for block_delimiter in self._interval_callbacks:
-                            if not self._head_block_num % block_delimiter and self._head_block_num > 0:
-                                for callback in self._interval_callbacks[block_delimiter]:
+                    if self._head_block_year_diff > 0:
+                        if has_timeout_callbacks:
+                            if 0 in self._timeout_callbacks:
+                                for callback in self._timeout_callbacks[0]:
                                     callback()
 
-                    for block_num in self._finalize_callbacks:
-                        if self._head_block_num in self._finalize_callbacks:
-                            for callback in self._finalize_callbacks[self._head_block_num]:
-                                self._finalize_results.append(run_callback(callback))
+                                del self._timeout_callbacks[0]
 
-                    if len(self._finalize_results) == needed_total_agrees:
-                        self._done = True
-                        self._status = check_finalize_status(self._finalize_results)
+                    if 0 not in self._timeout_callbacks:
+                        if has_timeout_callbacks:
+                            if self._head_block_num in self._timeout_callbacks and self._head_block_num > 1:
+                                for callback in self._timeout_callbacks[self._head_block_num]:
+                                    callback()
+
+                        if has_interval_callbacks:
+                            for block_delimiter in self._interval_callbacks:
+                                if not self._head_block_num % block_delimiter:
+                                    for callback in self._interval_callbacks[block_delimiter]:
+                                        callback()
+
+                        for block_num in self._finalize_callbacks:
+                            if self._head_block_num in self._finalize_callbacks and self._head_block_num > 1:
+                                for callback in self._finalize_callbacks[self._head_block_num]:
+                                    self._finalize_results.append(run_callback(callback))
+
+                        if len(self._finalize_results) == needed_total_finalizes:
+                            self._done = True
+                            self._status = check_finalize_status(self._finalize_results)
 
                 if self._done:
                     break
 
-    @staticmethod
-    def block_timeout_callback(block_num, finalize=False):
+    @block_timeout_callback(block_num=0)
+    def _claim_balances(self):
+        operation_id = self.echopy.config.operation_ids.BALANCE_CLAIM
+        for account in self.accounts:
+            tx = self.echopy.create_transaction()
+            props = {
+            }
+            for initial_balance in account.initial_balances:
+                props = {
+                    'deposit_to_account': account.id,
+                    'balance_owner_key': account.public_key,
+                    "balance_to_claim": initial_balance.id,
+                    "total_claimed": {
+                        "amount": initial_balance.amount,
+                        "asset_id": DEFAULT_ASSET_ID
+                    }
+                }
+                tx.add_operation(operation_id, props)
+                tx.add_signer(account.private_key)
 
-        def inner_function(function):
-
-            def add_callback(*args):
-                if finalize:
-                    if not hasattr(args[0], '_finalize_callbacks'):
-                        args[0]._finalize_callbacks = {}
-                        args[0]._finalize_results = []
-
-                    if block_num not in args[0]._finalize_callbacks:
-                        args[0]._finalize_callbacks.update({block_num: []})
-                    args[0]._finalize_callbacks[block_num].append(partial(function, args))
-                else:
-                    if not hasattr(args[0], '_timeout_callbacks'):
-                        args[0]._timeout_callbacks = {}
-
-                    if block_num not in args[0]._timeout_callbacks:
-                        args[0]._timeout_callbacks.update({block_num: []})
-                    args[0]._timeout_callbacks[block_num].append(partial(function, args))
-
-            return add_callback
-        return inner_function
-
-    @staticmethod
-    def block_interval_callback(block_num):
-
-        def inner_function(function):
-
-            def add_callback(*args):
-                if not hasattr(args[0], '_interval_callbacks'):
-                    args[0]._interval_callbacks = {}
-
-                if block_num not in args[0]._interval_callbacks:
-                    args[0]._interval_callbacks.update({block_num: []})
-                args[0]._interval_callbacks[block_num].append(partial(function, args))
-
-            return add_callback
-        return inner_function
+        tx.broadcast('1')

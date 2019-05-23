@@ -10,17 +10,17 @@ DEFAULT_NETWORK_CONNECTION_MODE = 'all'
 DEFAULT_ACCOUNT_COUNT = 10
 ASSET_DISTRIBUTION_TYPES = ['random', 'fixed', 'equal']
 DEFAULT_ASSET_DISTRIBUTION_TYPE = 'equal'
-DEFAULT_ASSET_TOTAL_AMOUNT = 1000000000
 DEFAULT_ASSET_SYMBOL = 'ECHO'
+DEFAULT_ASSET_ID = '1.3.0'
 
-ECHO_FOLDER = '/home/evasilev/Documents/Projects/echo'
+ECHO_FOLDER = '/home/evasilev/Documents/Projects/echo_last'
 NODE_PATH = '{}/bin/echo_node'.format(ECHO_FOLDER)
 API_ACCESS = '{}/access.json'.format(ECHO_FOLDER)
 
 
 DEFAULT_GENESIS_ECHORAND_CONFIG = {
-    "_time_net_1mb": 1000,
-    "_time_net_256b": 500,
+    "_time_net_1mb": 3000,
+    "_time_net_256b": 1500,
     "_creator_count": 2,
     "_verifier_count": 7,
     "_ok_threshold": 5,
