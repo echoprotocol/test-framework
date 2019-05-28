@@ -1,7 +1,6 @@
 import os
 import subprocess
-import signal
-from .utils import STARTING_RPC_PORT, STARTING_P2P_PORT
+from .utils import STARTING_RPC_PORT, STARTING_P2P_PORT, DEFAULT_TEMP_PATH
 
 
 class Node:
@@ -15,8 +14,6 @@ class Node:
         self.rpc_port = STARTING_RPC_PORT + self.node_num
         self.p2p_port = STARTING_P2P_PORT + self.node_num
         self.seed_nodes = seed_nodes
-        self.accounts_info = accounts_info  # TODO
-        self.committee_accounts = committee_accounts  # TODO
         self.genesis_path = genesis_path
         self.api_access = api_access
         self.data_dir = data_dir
@@ -53,19 +50,18 @@ class Node:
     def api_access(self, api_access):
         self._api_access = api_access
 
-    def generate_genesis(self, path):
+    def generate_genesis(self, path_to_save):
         if not self.node_path:
             raise("'node path' is needed")
 
-        if not path:
+        if not path_to_save:
             raise ("'path_to_save' is needed")
 
-        if os.path.exists(path):
-            os.remove(path)
+        if os.path.exists(path_to_save):
+            os.remove(path_to_save)
 
         command = 'screen -S node{} -d -m {}'.format(self.node_num, self.node_path)
-        command += ' --create-genesis-json {}'.format(path)
-
+        command += ' --create-genesis-json {}'.format(path_to_save)
         subprocess.Popen(command, shell=True)
 
     def authorize_account(self, account):
@@ -73,12 +69,12 @@ class Node:
                                                                                          account.private_key)
 
     def start(self):
+
         if self.seed_nodes is not None and not isinstance(self.seed_nodes, list):
             self.seed_nodes = [self.seed_nodes]
 
         data_dir = '{}/node{}'.format(self.data_dir, self.node_num)
-
-        command = 'screen -S node{} -d -m {} --echorand'.format(self.node_num, self.node_path)
+        command = '{} --echorand'.format(self.node_path)
         command += ' --rpc-endpoint=127.0.0.1:{} --p2p-endpoint=127.0.0.1:{}'.format(self.rpc_port, self.p2p_port)
         command += ' --data-dir={} --genesis-json {} --api-access {}'.format(data_dir, self.genesis_path,
                                                                              self.api_access)
@@ -91,18 +87,14 @@ class Node:
                 if seed_node < STARTING_P2P_PORT:
                     seed_node += STARTING_P2P_PORT
                 command += ' --seed-node=127.0.0.1:{}'.format(seed_node)
-        command += ' --resync-blockchain'
         if self._start_echorand:
             command += ' --start-echorand'
-        subprocess.Popen(command, shell=True)
+
+        runfile_path = '{}/run{}.sh'.format(DEFAULT_TEMP_PATH, self.node_num)
+        with open(runfile_path, 'w') as file:
+            file.write(command)
+
+        subprocess.Popen('screen -S node{} -d -m bash {}'.format(self.node_num, runfile_path), shell=True)
 
     def stop(self):
-        out, _ = subprocess.Popen(['screen', '-list'], stdout=subprocess.PIPE).communicate()
-        out = str(out, encoding='utf-8')
-        if 'node{}\t'.format(self.node_num) not in out:
-            raise Exception('There is no connection')
-        end_index = out.find('node{}\t'.format(self.node_num)) - 1
-        start_index = out[:end_index].rfind('\t') + 1
-        pid = int(out[start_index: end_index])
-        os.kill(pid, signal.SIGKILL)
-        subprocess.Popen(['screen', '-wipe'], stdout=subprocess.PIPE)
+        subprocess.call('screen -x node{} -X quit'.format(self.node_num), shell=True)

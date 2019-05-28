@@ -8,7 +8,7 @@ from .objects import GenesisConfig, AssetDistribution
 from .node import Node
 from .utils import DEFAULT_DATA_DIR, DEFAULT_NETWORK_NODE_COUNT, DEFAULT_NETWORK_CONNECTION_MODE, \
     NETWORK_CONNECTION_MODES, DEFAULT_ASSET_DISTRIBUTION_TYPE, ASSET_DISTRIBUTION_TYPES, \
-    DEFAULT_ACCOUNT_COUNT, DEFAULT_GENESIS_PATH, DEFAULT_SYSTEM_GENESIS_PATH, DEFAULT_ASSET_ID
+    DEFAULT_ACCOUNT_COUNT, DEFAULT_GENESIS_PATH, DEFAULT_TEMP_GENESIS_PATH, DEFAULT_ASSET_ID
 from .echopy_wrapper import EchopyWrapper
 
 
@@ -22,12 +22,12 @@ class EchoTest:
         assert self.node_path
         assert self.api_access
 
-        self._system_genesis_path = DEFAULT_SYSTEM_GENESIS_PATH
-        os.makedirs(self._system_genesis_path[:self._system_genesis_path.rfind('/')], exist_ok=True)
+        self._temp_genesis_path = DEFAULT_TEMP_GENESIS_PATH
+        os.makedirs(self._temp_genesis_path[:self._temp_genesis_path.rfind('/')], exist_ok=True)
 
         self.genesis = GenesisConfig()
-        self.genesis.generate_from_node(node_path=self.node_path, path_to_save=self._system_genesis_path)
-        self.genesis.load_from_file(self._system_genesis_path)
+        self.genesis.generate_from_node(node_path=self.node_path, path_to_save=self._temp_genesis_path)
+        self.genesis.load_from_file(self._temp_genesis_path)
 
         self._done = False
         self._status = None
@@ -139,9 +139,9 @@ class EchoTest:
             self.nodes.append(Node(**node_args))
 
     def _read_accounts_info(self):
-        self.genesis.save_to_file(self._system_genesis_path)
+        self.genesis.save_to_file(self._temp_genesis_path)
         accounts_names = [account.name for account in self.accounts]
-        with open(self._system_genesis_path, 'r') as file:
+        with open(self._temp_genesis_path, 'r') as file:
             genesis_config = json.loads(file.read())
             for account_num, account_info in enumerate(genesis_config['initial_accounts']):
                 name = account_info['name']
@@ -190,7 +190,7 @@ class EchoTest:
         self._authorize_accounts()
         self._start_nodes()
         self.genesis.save_to_file(self.genesis_path)
-        sleep(1)
+        sleep(2)
         self.echopy.connect(self.nodes[0])  # Default connection to first node
         self._update_accounts_info()
         self._claim_balances()
@@ -199,6 +199,9 @@ class EchoTest:
     def _stop_network(self):
         for node in self.nodes:
             node.stop()
+        tmp_path = './.tmp'
+        if os.path.exists(tmp_path):
+            shutil.rmtree(tmp_path)
 
     def run(self):
         if hasattr(self, 'setup'):
@@ -249,14 +252,6 @@ class EchoTest:
                 sleep(0.5)
                 if self._update_block_head():
 
-                    if self._head_block_year_diff > 0:
-                        if has_timeout_callbacks:
-                            if 0 in self._timeout_callbacks:
-                                for callback in self._timeout_callbacks[0]:
-                                    callback()
-
-                                del self._timeout_callbacks[0]
-
                     if 0 not in self._timeout_callbacks:
                         if has_timeout_callbacks:
                             if self._head_block_num in self._timeout_callbacks and self._head_block_num > 1:
@@ -278,14 +273,22 @@ class EchoTest:
                             self._done = True
                             self._status = check_finalize_status(self._finalize_results)
 
+                    if self._head_block_year_diff > 0:
+                        if has_timeout_callbacks:
+                            if 0 in self._timeout_callbacks:
+                                for callback in self._timeout_callbacks[0]:
+                                    callback()
+
+                                del self._timeout_callbacks[0]
+
                 if self._done:
                     break
 
     @block_timeout_callback(block_num=0)
     def _claim_balances(self):
         operation_id = self.echopy.config.operation_ids.BALANCE_CLAIM
+        tx = self.echopy.create_transaction()
         for account in self.accounts:
-            tx = self.echopy.create_transaction()
             props = {
             }
             for initial_balance in account.initial_balances:
@@ -300,5 +303,4 @@ class EchoTest:
                 }
                 tx.add_operation(operation_id, props)
                 tx.add_signer(account.private_key)
-
         tx.broadcast('1')

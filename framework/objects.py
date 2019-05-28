@@ -15,7 +15,7 @@ class GenesisConfig:
         node = Node(node_path=node_path, node_num=GENERATE_GENESIS_NODE_NUM)
         node.generate_genesis(path_to_save)
 
-        sleep(1)
+        sleep(2)
 
         with open(path_to_save, 'r') as file:
             genesis_config = json.loads(file.read())

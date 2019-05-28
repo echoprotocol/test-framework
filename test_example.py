@@ -2,6 +2,7 @@ from framework.echotest import EchoTest
 from framework.utils import NODE_PATH, DEFAULT_GENESIS_PATH, API_ACCESS
 from framework.callbacks import block_timeout_callback, block_interval_callback
 
+
 class ExampleTest(EchoTest):
 
     def __init__(self):
@@ -10,15 +11,15 @@ class ExampleTest(EchoTest):
         self.node_path = NODE_PATH
         self.genesis_path = DEFAULT_GENESIS_PATH
         self.api_access = API_ACCESS
-        self.node_count = 6
+        self.node_count = 10
         self.connection_mode = 'all'
 
         # Account parameters
         self.account_count = 30
         self.asset_distribution_type = 'equal'
 
+        result = []
         for i in range(self.node_count):
-            result = []
             result += [i for _ in range(self.account_count // self.node_count)]
         self.account_authorization = result
 
@@ -31,8 +32,7 @@ class ExampleTest(EchoTest):
                                                       asset_symbol='ECHO')
         for _id, account in enumerate(self.accounts):
             self.genesis.initial_accounts.append(account.genesis_account_format)
-            if _id < len(self.account_authorization):
-                self.genesis.initial_committee_candidates.append(account.genesis_committee_format)
+            self.genesis.initial_committee_candidates.append(account.genesis_committee_format)
 
             for initial_balance in account.initial_balances:
                 self.genesis.initial_balances.append(initial_balance.genesis_format)
