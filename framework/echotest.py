@@ -189,6 +189,7 @@ class EchoTest:
         os.makedirs(self.data_dir)
         self.genesis.save_to_file(self.genesis_path)
         self._start_nodes()
+        sleep(5)  # TODO: Change to running wait-for-it.sh
         self.echopy.connect(self.nodes[0])  # Default connection to first node
         self._update_accounts_info()
         self._claim_balances()
