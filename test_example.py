@@ -40,7 +40,7 @@ class ExampleTest(EchoTest):
             for initial_balance in account.initial_balances:
                 self.genesis.initial_balances.append(initial_balance.genesis_format)
 
-    # Use block_interval_callback to autorun this function trough `block_num` blocks count
+    # Use block_interval_callback to autorun this function through `block_num` blocks count
     @block_interval_callback(block_num=1)
     def send_transaction(self):
         first_account_num = 13
