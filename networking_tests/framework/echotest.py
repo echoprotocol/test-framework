@@ -223,17 +223,14 @@ class EchoTest:
     def _run_callbacks(self):
 
         def check_finalize_status(finalize_results):
-            return [not isinstance(result, str) for result in finalize_results]
+            return [result if isinstance(result, str) else True for result in finalize_results]
 
         def run_callback(callback):
             assertion_error = None
             try:
                 callback()
-            except AssertionError as assertion_error:
-                pass
-
-            if assertion_error:
-                assertion_error = 'AssertionError: {}'.format(assertion_error)
+            except AssertionError as e:
+                assertion_error = "AssertionError: {}".format(e)
 
             return assertion_error
 

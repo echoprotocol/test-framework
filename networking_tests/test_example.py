@@ -1,6 +1,6 @@
-from framework.echotest import EchoTest
-from framework.utils import NODE_PATH, DEFAULT_GENESIS_PATH, API_ACCESS
-from framework.callbacks import block_timeout_callback, block_interval_callback
+from .framework.echotest import EchoTest
+from .framework.utils import NODE_PATH, DEFAULT_GENESIS_PATH, API_ACCESS
+from .framework.callbacks import block_timeout_callback, block_interval_callback
 
 
 class ExampleTest(EchoTest):
@@ -67,7 +67,8 @@ class ExampleTest(EchoTest):
     def check_last_block(self):
         # Check that last block contain transaction
         head_block_num = self.echopy.api.database.get_dynamic_global_properties()['head_block_number']
-        assert len(self.echopy.api.database.get_block(head_block_num)['transactions'])
+        assert len(self.echopy.api.database.get_block(head_block_num)['transactions']),\
+            'Not any transactions in last block'
 
     def setup(self):
         # Run all callback and others funcs in `setup` method
