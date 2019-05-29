@@ -60,10 +60,11 @@ class Account:
 
     @property
     def genesis_account_format(self):
-        account_dict = {'name': self.name, 'is_lifetime_member': self.lifetime_status,
-                        'active_key': self.public_key, 'ed_key': self.public_key}
-        if self.private_key:
-            account_dict.update({'private_key': self.private_key})
+        account_dict = {'name': self.name,
+                        'owner_key': self.public_key,
+                        'active_key': self.public_key,
+                        'ed_key': self.public_key,
+                        'is_lifetime_member': self.lifetime_status}
 
         return account_dict
 
@@ -94,15 +95,9 @@ class InitialBalance:
 
     @property
     def genesis_format(self):
-        result = self.__dict__
-        keys_for_deleting = []
-        for key in result.keys():
-            if result[key] is None:
-                keys_for_deleting.append(key)
-
-        for key in keys_for_deleting:
-            del result[key]
-        return result
+        return {'owner': self.owner,
+                'asset_symbol': self.asset_symbol,
+                'amount': self.amount}
 
 
 class AssetDistribution:

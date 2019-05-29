@@ -15,7 +15,7 @@ DEFAULT_ASSET_SYMBOL = 'ECHO'
 DEFAULT_ASSET_ID = '1.3.0'
 
 ECHO_FOLDER = '/home/evasilev/Documents/Projects/echo_last'
-NODE_PATH = '{}/bin/echo_node'.format(ECHO_FOLDER)
+NODE_PATH = '{}/build/bin/echo_node'.format(ECHO_FOLDER)
 API_ACCESS = '{}/access.json'.format(ECHO_FOLDER)
 
 

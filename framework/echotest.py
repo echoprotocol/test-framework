@@ -174,10 +174,6 @@ class EchoTest:
 
     def _start_nodes(self):
         for node in self.nodes:
-            if not node.node_num and os.path.exists(self.data_dir):
-                shutil.rmtree(self.data_dir)
-            data_dir = '{}/node{}'.format(self.data_dir, node.node_num)
-            os.makedirs(data_dir)
             node.start()
 
     def setup(self):
@@ -188,9 +184,11 @@ class EchoTest:
         self._initialize_network()
         self._read_accounts_info()
         self._authorize_accounts()
-        self._start_nodes()
+        if os.path.exists(self.data_dir):
+            shutil.rmtree(self.data_dir)
+        os.makedirs(self.data_dir)
         self.genesis.save_to_file(self.genesis_path)
-        sleep(2)
+        self._start_nodes()
         self.echopy.connect(self.nodes[0])  # Default connection to first node
         self._update_accounts_info()
         self._claim_balances()
@@ -204,8 +202,7 @@ class EchoTest:
             shutil.rmtree(tmp_path)
 
     def run(self):
-        if hasattr(self, 'setup'):
-            self.setup()
+        self.setup()
         self._start_network()
         self._stop_network()
 

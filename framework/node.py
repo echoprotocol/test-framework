@@ -70,14 +70,18 @@ class Node:
 
     def start(self):
 
+        def get_absolute_path(path):
+            return os.path.abspath(path)
+
         if self.seed_nodes is not None and not isinstance(self.seed_nodes, list):
             self.seed_nodes = [self.seed_nodes]
 
         data_dir = '{}/node{}'.format(self.data_dir, self.node_num)
         command = '{} --echorand'.format(self.node_path)
         command += ' --rpc-endpoint=127.0.0.1:{} --p2p-endpoint=127.0.0.1:{}'.format(self.rpc_port, self.p2p_port)
-        command += ' --data-dir={} --genesis-json {} --api-access {}'.format(data_dir, self.genesis_path,
-                                                                             self.api_access)
+        command += ' --data-dir={} --genesis-json {} --api-access {}'.format(get_absolute_path(data_dir),
+                                                                             get_absolute_path(self.genesis_path),
+                                                                             get_absolute_path(self.api_access))
 
         if self.authorized_command:
             command += self.authorized_command
