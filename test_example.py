@@ -15,32 +15,36 @@ class ExampleTest(EchoTest):
         self.connection_mode = 'all'
 
         # Account parameters
-        self.account_count = 30
+        self.account_count = 15
         self.asset_distribution_type = 'equal'
 
-        result = []
-        for i in range(self.node_count):
-            result += [i for _ in range(self.account_count // self.node_count)]
+        result = [node_num % self.node_count for node_num in range(self.account_count)]
         self.account_authorization = result
 
         super().__init__()
 
-    def make_new_genesis_config(self):
+    def change_genesis_config(self):
         self.accounts = self.echopy.generate_accounts(count=self.account_count,
                                                       asset_distribution_type=self.asset_distribution_type,
                                                       asset_amount=5000000000,
                                                       asset_symbol='ECHO')
+
+        # Add all accounts to initial_accounts in genesis.json file
         for _id, account in enumerate(self.accounts):
             self.genesis.initial_accounts.append(account.genesis_account_format)
+
+            # Add all accounts to initial_committee_candidates in genesis.json file
             self.genesis.initial_committee_candidates.append(account.genesis_committee_format)
 
+            # Add all accounts balances to initial_balances in genesis.json file
             for initial_balance in account.initial_balances:
                 self.genesis.initial_balances.append(initial_balance.genesis_format)
 
+    # Use block_interval_callback to autorun this function trough `block_num` blocks count
     @block_interval_callback(block_num=1)
     def send_transaction(self):
-        first_account_num = second_account_num = 14
-        second_account_num = 13
+        first_account_num = 13
+        second_account_num = 14
         account_from = self.accounts[first_account_num]
         account_to = self.accounts[second_account_num]
 
@@ -57,11 +61,16 @@ class ExampleTest(EchoTest):
         tx.add_signer(account_from.private_key)
         tx.broadcast('1')
 
+    # Use block_timeout_callback to autorun this function once = when `block_num` block was produced
+    # Use finalize flag to exit the test after this callback (only for block_timeout_callback)
     @block_timeout_callback(block_num=20, finalize=True)
-    def n(self):
-        print("TIMEOUT")
+    def check_last_block(self):
+        # Check that last block contain transaction
+        head_block_num = self.echopy.api.database.get_dynamic_global_properties()['head_block_number']
+        assert len(self.echopy.api.database.get_block(head_block_num)['transactions'])
 
     def setup(self):
-        self.make_new_genesis_config()
+        # Run all callback and others funcs in `setup` method
+        self.change_genesis_config()
         self.send_transaction()
-        self.n()
+        self.check_last_block()
