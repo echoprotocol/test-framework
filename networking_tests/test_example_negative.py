@@ -68,7 +68,7 @@ class ExampleTestNegative(EchoTest):
 
         # Checks that last block containt at least 3 transactions
         assert len(self.echopy.api.database.get_block(head_block_num)['transactions']) > 2,\
-            'Last block have small count of transaction (< 3)'
+            'Last block have small count of transactions (< 3)'
 
     def setup(self):
         # Run all callback and others functions in `setup` method
