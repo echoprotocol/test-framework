@@ -11,7 +11,6 @@ from .utils import DEFAULT_DATA_DIR, DEFAULT_NETWORK_NODE_COUNT, DEFAULT_NETWORK
     DEFAULT_ACCOUNT_COUNT, DEFAULT_GENESIS_PATH, DEFAULT_TEMP_GENESIS_PATH, DEFAULT_ASSET_ID
 from .echopy_wrapper import EchopyWrapper
 
-
 def timestamp_to_datetime(timestamp):
     return datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')
 
@@ -203,9 +202,12 @@ class EchoTest:
             shutil.rmtree(tmp_path)
 
     def run(self):
-        self.setup()
-        self._start_network()
-        self._stop_network()
+        try:
+            self.setup()
+            self._start_network()
+            self._stop_network()
+        except KeyboardInterrupt:
+            self._stop_network()
 
     def _update_block_head(self):
         actual_head_block_num = self.echopy.api.database.get_dynamic_global_properties()['head_block_number']

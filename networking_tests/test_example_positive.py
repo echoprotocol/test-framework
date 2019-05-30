@@ -1,15 +1,14 @@
 from .framework.echotest import EchoTest
-from .framework.utils import NODE_PATH, DEFAULT_GENESIS_PATH, API_ACCESS
+from .framework.utils import NODE_PATH, API_ACCESS
 from .framework.callbacks import block_timeout_callback, block_interval_callback
 
 
-class ExampleTest(EchoTest):
+class ExampleTestPositive(EchoTest):
 
     def __init__(self):
 
         # Chain Parameters
         self.node_path = NODE_PATH
-        self.genesis_path = DEFAULT_GENESIS_PATH
         self.api_access = API_ACCESS
         self.node_count = 10
         self.connection_mode = 'all'
@@ -65,10 +64,11 @@ class ExampleTest(EchoTest):
     # Use finalize flag to exit the test after this callback (only for block_timeout_callback)
     @block_timeout_callback(block_num=20, finalize=True)
     def check_last_block(self):
-        # Check that last block contain transaction
         head_block_num = self.echopy.api.database.get_dynamic_global_properties()['head_block_number']
+
+        # Checks that last block have any transactions
         assert len(self.echopy.api.database.get_block(head_block_num)['transactions']),\
-            'Not any transactions in last block'
+            'No any transactions in last block'
 
     def setup(self):
         # Run all callback and others funcs in `setup` method
