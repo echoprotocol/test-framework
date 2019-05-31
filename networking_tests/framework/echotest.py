@@ -11,6 +11,7 @@ from .utils import DEFAULT_NETWORK_CONNECTION_MODE, NETWORK_CONNECTION_MODES,\
     DEFAULT_ACCOUNT_COUNT, DEFAULT_ASSET_ID, DEFAULT_TEMP_PATH, DEFAULT_NETWORK_NODE_COUNT
 from .echopy_wrapper import EchopyWrapper
 
+
 def timestamp_to_datetime(timestamp):
     return datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')
 
@@ -30,6 +31,26 @@ class EchoTest:
         self.echopy = EchopyWrapper()
 
     @property
+    def node_path(self):
+        if not hasattr(self, '_node_path'):
+            raise Exception('"node_path" property is required')
+        return self._node_path
+
+    @node_path.setter
+    def node_path(self, node_path):
+        self._node_path = node_path
+
+    @property
+    def api_access(self):
+        if not hasattr(self, '_api_access'):
+            raise Exception('"api_access" property is required')
+        return self._api_access
+
+    @api_access.setter
+    def api_access(self, api_access):
+        self._api_access = api_access
+
+    @property
     def data_dir(self):
         if not hasattr(self, '_data_dir'):
             raise Exception('"data_dir" property is required')
@@ -38,17 +59,7 @@ class EchoTest:
     @data_dir.setter
     def data_dir(self, data_dir):
         self._data_dir = data_dir
-
-    @property
-    def genesis_path(self):
-        if not hasattr(self, '_genesis_path'):
-            self._genesis_path = '{}/genesis.json'.format(self.data_dir)
-
-        return self._genesis_path
-
-    @genesis_path.setter
-    def genesis_path(self, genesis_path):
-        self._genesis_path = genesis_path
+        self._genesis_path = '{}/genesis.json'.format(self.data_dir)
 
     @property
     def node_count(self):
@@ -125,7 +136,7 @@ class EchoTest:
                     seed_node_arguments[i].append(i - 1)
 
         for node_num in range(self.node_count):
-            node_args = {'node_path': self.node_path, 'genesis_path': self.genesis_path,
+            node_args = {'node_path': self.node_path, 'genesis_path': self._genesis_path,
                          'api_access': self.api_access, 'data_dir': self.data_dir,
                          'node_num': node_num, 'seed_nodes': seed_node_arguments[node_num]}
             if node_num == self.node_count - 1:
@@ -181,7 +192,7 @@ class EchoTest:
         if os.path.exists(self.data_dir):
             shutil.rmtree(self.data_dir)
         os.makedirs(self.data_dir)
-        self.genesis.save_to_file(self.genesis_path)
+        self.genesis.save_to_file(self._genesis_path)
         self._start_nodes()
         sleep(5)  # TODO: Change to running wait-for-it.sh
         self.echopy.connect(self.nodes[0])  # Default connection to first node

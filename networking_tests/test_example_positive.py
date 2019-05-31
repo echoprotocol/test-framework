@@ -2,7 +2,7 @@ from .framework.echotest import EchoTest
 from .framework.callbacks import block_timeout_callback, block_interval_callback
 
 
-class ExampleTestPositive(EchoTest):
+class TestExamplePositive(EchoTest):
 
     def __init__(self):
 
