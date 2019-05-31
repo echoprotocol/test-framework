@@ -1,0 +1,5 @@
+# set custom parameters for `test_runner.py` configuration
+
+DATA_DIR = '<PATH_TO_DESIRED_DATA_DIR>'
+NODE_PATH = '<PATH_TO_ECHO_NODE>'
+API_ACCESS = '<PATH_TO_ACCESS_API_CONFIGURATION_FILE>'

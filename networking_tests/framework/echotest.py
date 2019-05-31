@@ -6,9 +6,9 @@ from datetime import datetime
 from .callbacks import block_timeout_callback
 from .objects import GenesisConfig, AssetDistribution
 from .node import Node
-from .utils import DEFAULT_DATA_DIR, DEFAULT_NETWORK_NODE_COUNT, DEFAULT_NETWORK_CONNECTION_MODE, \
-    NETWORK_CONNECTION_MODES, DEFAULT_ASSET_DISTRIBUTION_TYPE, ASSET_DISTRIBUTION_TYPES, \
-    DEFAULT_ACCOUNT_COUNT, DEFAULT_GENESIS_PATH, DEFAULT_TEMP_GENESIS_PATH, DEFAULT_ASSET_ID
+from .utils import DEFAULT_NETWORK_CONNECTION_MODE, NETWORK_CONNECTION_MODES,\
+    DEFAULT_ASSET_DISTRIBUTION_TYPE, ASSET_DISTRIBUTION_TYPES, \
+    DEFAULT_ACCOUNT_COUNT, DEFAULT_ASSET_ID, DEFAULT_TEMP_PATH, DEFAULT_NETWORK_NODE_COUNT
 from .echopy_wrapper import EchopyWrapper
 
 def timestamp_to_datetime(timestamp):
@@ -18,15 +18,10 @@ def timestamp_to_datetime(timestamp):
 class EchoTest:
 
     def __init__(self):
-        assert self.node_path
-        assert self.api_access
-
-        self._temp_genesis_path = DEFAULT_TEMP_GENESIS_PATH
+        self._temp_genesis_path = '{}/genesis.json'.format(DEFAULT_TEMP_PATH)
         os.makedirs(self._temp_genesis_path[:self._temp_genesis_path.rfind('/')], exist_ok=True)
 
         self.genesis = GenesisConfig()
-        self.genesis.generate_from_node(node_path=self.node_path, path_to_save=self._temp_genesis_path)
-        self.genesis.load_from_file(self._temp_genesis_path)
 
         self._done = False
         self._status = None
@@ -37,7 +32,7 @@ class EchoTest:
     @property
     def data_dir(self):
         if not hasattr(self, '_data_dir'):
-            self._data_dir = DEFAULT_DATA_DIR
+            raise Exception('"data_dir" property is required')
         return self._data_dir
 
     @data_dir.setter
@@ -47,7 +42,7 @@ class EchoTest:
     @property
     def genesis_path(self):
         if not hasattr(self, '_genesis_path'):
-            self._genesis_path = DEFAULT_GENESIS_PATH
+            self._genesis_path = '{}/genesis.json'.format(self.data_dir)
 
         return self._genesis_path
 
@@ -203,6 +198,8 @@ class EchoTest:
 
     def run(self):
         try:
+            self.genesis.generate_from_node(node_path=self.node_path, path_to_save=self._temp_genesis_path)
+            self.genesis.load_from_file(self._temp_genesis_path)
             self.setup()
             self._start_network()
             self._stop_network()

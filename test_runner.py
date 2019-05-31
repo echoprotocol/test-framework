@@ -5,13 +5,16 @@ from glob import glob
 from networking_tests.framework.echotest import EchoTest
 from networking_tests.framework.color_text import ColorText
 from prettytable import PrettyTable
+from config import DATA_DIR, NODE_PATH, API_ACCESS
 
 
 class TestRunner:
 
-    def __init__(self, test_folder='./networking_tests/', data_dir='./data'):
+    def __init__(self, test_folder='./networking_tests/'):
         self.test_folder = test_folder
-        self.data_dir = os.path.abspath(data_dir)
+        self.data_dir = os.path.abspath(DATA_DIR)
+        self.node_path = os.path.abspath(NODE_PATH)
+        self.api_access = os.path.abspath(API_ACCESS)
 
     @staticmethod
     def _get_import_from_path(path):
@@ -83,6 +86,9 @@ class TestRunner:
                 self._test_names.append(test.__name__)
                 test_object.data_dir = '{}/{}'.format(self.data_dir, self._test_names[test_num])
                 test_object.genesis_path = '{}/genesis.json'.format(test_object.data_dir)
+                test_object.node_path = self.node_path
+                test_object.api_access = self.api_access
+
                 test_object.run()
                 self._logs.append(test_object._status)
             except Exception as e:
@@ -96,9 +102,6 @@ if __name__ == '__main__':
 
     parser.add_argument('-q', '--quiet', default=False, action='store_true',
                         help='Run test in quiet mode')
-    parser.add_argument('-r', '--report', default='', type=str,
-                        help='Path for saving log-report')
-
     args = parser.parse_args()
 
     runner = TestRunner()

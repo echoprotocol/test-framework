@@ -1,5 +1,4 @@
 from .framework.echotest import EchoTest
-from .framework.utils import NODE_PATH, API_ACCESS
 from .framework.callbacks import block_timeout_callback, block_interval_callback
 
 
@@ -8,8 +7,6 @@ class ExampleTestNegative(EchoTest):
     def __init__(self):
 
         # Chain Parameters
-        self.node_path = NODE_PATH
-        self.api_access = API_ACCESS
         self.node_count = 10
         self.connection_mode = 'all'
 

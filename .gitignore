@@ -1,5 +1,6 @@
 # Custom
 .tmp/
+config.py
 
 # VScode
 .vscode/
