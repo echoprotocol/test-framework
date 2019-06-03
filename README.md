@@ -34,4 +34,4 @@ To check available parameters to `test_runner.py` script:
 
 ### Writing tests
 
-To see information/examples of test writing: look <b>[section]()</b>.
+To see information/examples about: framework, test writing or other utility objects: look <b>[section](docs/Framework.md)</b>.

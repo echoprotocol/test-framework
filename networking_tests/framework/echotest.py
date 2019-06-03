@@ -3,6 +3,7 @@ import os
 import shutil
 from time import sleep
 from datetime import datetime
+from .logger import Logger
 from .callbacks import block_timeout_callback
 from .objects import GenesisConfig, AssetDistribution
 from .node import Node
@@ -29,6 +30,7 @@ class EchoTest:
 
         self.nodes = []
         self.echopy = EchopyWrapper()
+        self.log = Logger()
 
     @property
     def node_path(self):

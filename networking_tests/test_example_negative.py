@@ -20,10 +20,15 @@ class TestExampleNegative(EchoTest):
         super().__init__()
 
     def change_genesis_config(self):
+
+        self.log.info('Generate accounts')
+
         self.accounts = self.echopy.generate_accounts(count=self.account_count,
                                                       asset_distribution_type=self.asset_distribution_type,
                                                       asset_amount=5000000000,
                                                       asset_symbol='ECHO')
+
+        self.log.info('Add generated accounts to genesis config')
 
         # Add all accounts to initial_accounts in genesis.json file
         for _id, account in enumerate(self.accounts):
@@ -57,18 +62,26 @@ class TestExampleNegative(EchoTest):
         tx.add_signer(account_from.private_key)
         tx.broadcast('1')
 
+        # Get number of last block to make understandable logs
+        head_block_num = self.echopy.api.database.get_dynamic_global_properties()['head_block_number']
+        self.log.info('Block: {} | Transaction broadcasted'.format(head_block_num))
+
     # Use block_timeout_callback to autorun this function once = when `block_num` block was produced
     # Use finalize flag to exit the test after this callback (only for block_timeout_callback)
     @block_timeout_callback(block_num=20, finalize=True)
     def check_last_block(self):
+        # Get number of last block
         head_block_num = self.echopy.api.database.get_dynamic_global_properties()['head_block_number']
 
         # Checks that last block containt at least 3 transactions
-        assert len(self.echopy.api.database.get_block(head_block_num)['transactions']) > 2,\
-            'Last block have small count of transactions (< 3)'
+        condition = bool(len(self.echopy.api.database.get_block(head_block_num)['transactions']) > 2)
+        log_function = self.log.info if condition else self.log.error
+        log_function('Finalize condition checked')
+        assert condition, 'Last block have small count of transactions (< 3)'
 
     def setup(self):
         # Run all callback and others functions in `setup` method
+        self.log.info('Run setup')
         self.change_genesis_config()
         self.send_transaction()
         self.check_last_block()

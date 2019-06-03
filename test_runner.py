@@ -3,7 +3,7 @@ import argparse
 from inspect import isclass
 from glob import glob
 from networking_tests.framework.echotest import EchoTest
-from networking_tests.framework.color_text import ColorText
+from networking_tests.framework.color_text import *
 from prettytable import PrettyTable
 from config import DATA_DIR, NODE_PATH, API_ACCESS
 
@@ -43,11 +43,14 @@ class TestRunner:
         if not quiet:
             status_dict = {True: 'Passed', False: 'Failed'}
             result_log_table = PrettyTable()
-            result_log_table.field_names = [ColorText.text_bold('№'),
-                                            ColorText.text_bold('Test name'),
-                                            ColorText.text_bold('Status'),
-                                            ColorText.text_bold('Description')]
+            result_log_table.field_names = [text_bold('№'),
+                                            text_bold('Test name'),
+                                            text_bold('Logs'),
+                                            text_bold('Status'),
+                                            text_bold('Description')]
+
             result_log_table.align['Description'] = 'l'
+            result_log_table.align['Logs'] = 'l'
 
         status_counter = {True: 0, False: 0}
         for test_num, logs in enumerate(self._logs):
@@ -59,26 +62,31 @@ class TestRunner:
                     for log in logs:
                         if isinstance(log, str):
                             description += '{}\n'.format(log)
-                description = ColorText.text_fail(description)
-                status = ColorText.text_pass(status_dict[status]) if status else\
-                    ColorText.text_fail(status_dict[status])
-                result_log_table.add_row([test_num + 1,
-                                          self._test_names[test_num],
-                                          status,
-                                          description
-                                          ])
-        if 'result_log_table' in locals():
-            print(result_log_table, end='\n\n')
-        print('{}: {} | {}: {} | {}: {}'.format(ColorText.text_bold('Total tests'),
-                                                ColorText.text_bold('{}'.format(len(self._logs))),
-                                                ColorText.text_pass('Passed'),
-                                                ColorText.text_pass('{}'.format(status_counter[True])),
-                                                ColorText.text_fail('Failed'),
-                                                ColorText.text_fail('{}'.format(status_counter[False]))))
+                description = text_fail(description)
+                status = text_pass(status_dict[status]) if status else text_fail(status_dict[status])
 
-    def run_tests(self, quiet=False):
+                for internal_log_num, internal_test_log in enumerate(self._internal_test_logs[test_num]):
+                    row = ['' for _ in range(len(result_log_table.field_names))]
+                    if not internal_log_num:
+                        row = [test_num + 1, self._test_names[test_num], internal_test_log, status, description]
+                    row[2] = internal_test_log
+                    result_log_table.add_row(row)
+
+                result_log_table.add_row(['' for _ in range(len(result_log_table.field_names))])
+
+        if 'result_log_table' in locals():
+            print(result_log_table)
+        print('{}: {} | {}: {} | {}: {}'.format(text_bold('Total tests'),
+                                                text_bold('{}'.format(len(self._logs))),
+                                                text_pass('Passed'),
+                                                text_pass('{}'.format(status_counter[True])),
+                                                text_fail('Failed'),
+                                                text_fail('{}'.format(status_counter[False]))))
+
+    def run_tests(self, quiet=False, logs_width=70):
         tests = self._get_test_classes()
         self._logs = []
+        self._internal_test_logs = []
         self._test_names = []
         for test_num, test in enumerate(tests):
             try:
@@ -90,10 +98,10 @@ class TestRunner:
                 test_object.api_access = self.api_access
 
                 test_object.run()
+                self._internal_test_logs.append(test_object.log.get_logger_steps(logs_width))
                 self._logs.append(test_object._status)
             except Exception as e:
                 print(e)
-        print('')
         self._get_logs(quiet=quiet)
         print('')
 
