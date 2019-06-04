@@ -67,3 +67,7 @@ You can define new properties required to specific test.
 - Use `finalize` flag in `block_timeout_callback` decorator, if this function assert conditions to make test done. You can use many functions with `finalize` flag.
 - Use `log` property of `EchoTest` class to make logs in test, which display in full log-result of tests running.
 - Override `setup` method in test. Run all logic functions in it.
+
+## Notes
+
+In test writing, remember that null-blocks can't contain transactions (useful for assertion conditions).
