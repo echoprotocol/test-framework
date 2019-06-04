@@ -27,31 +27,31 @@ Some default variables.
 
 The [example tests](./../networking_tests/) were heavily commented. If you are writing your first test, copy one of them and modify to fit your needs.
 
-## Test property
+## Test properties
 
-To configure test, you can set test properties when initialize it:
+You can set test properties when initialize it, for fine tuning:
 
-- `node_count` - integer, count of nodes in network.
-- `connection_mode` - string, type of nodes connection. Can be: 'all', 'chain', None .
-- `account_count` - integer, number of accounts in network.
-- `account authorization` - list, each element is number of node on which corresponding account would be authorized (correspondance condition = index of element).
-- `asset_distribution_type` - string, type of asset distribution between accounts in account generation process. Can be: 'random', 'equal', 'fixed'.
+- `node_count: integer` - count of nodes in network.
+- `connection_mode: string` - type of nodes connection. Can be: 'all', 'chain', None .
+- `account_count: integer` - number of accounts in network.
+- `account authorization: list` - each element is number of node on which corresponding account would be authorized (correspondance condition = index of element).
+- `asset_distribution_type: string` - type of asset distribution between accounts in account generation process. Can be: 'random', 'equal', 'fixed'.
 
 Each test obtain properties, automated setted using `config.py`, like:
 
-- `api_access` - str, path to api-access config file.
-- `data_dir` - str, path to desired data directory.
-- `node_path`, str, path to echo node.
+- `api_access: string` - path to api-access config file.
+- `data_dir: string` - path to desired data directory.
+- `node_path: string` - path to echo node.
 
 In test properties you can find objects:
 
-- `echopy` - [EchopyWrapper](./../networking_tests/framework/echopy_wrapper.py) object, to easy using the API and building/sending a transaction.
-- `genesis` - [GenesisConfig](./../networking_tests/framework/objects.py) object, to easy access of genesis configuration file.
-- `log` - [Logger](./../networking_tests/framework/logger.py) object, it provides logging methods. All logs are include in results ot `test_runner.py` script.
+- `echopy:` [EchopyWrapper](./../networking_tests/framework/echopy_wrapper.py) object - to easy using the API and building/sending a transaction. This object have methods to easy generate [account](./../networking_tests/framework/objects.py)(s).
+- `genesis:` [GenesisConfig](./../networking_tests/framework/objects.py) object - to easy access of genesis configuration file.
+- `log:` [Logger](./../networking_tests/framework/logger.py) object - provides logging methods. All logs are include in results ot `test_runner.py` script.
 
 For each echo-node when test running makes a Node object:
 
-- `nodes` - list, each element is object of [Node](./../networking_tests/framework/node.py) class.
+- `nodes: list` - each element is object of [Node](./../networking_tests/framework/node.py) class.
 
 You can define new properties required to specific test.
 
@@ -64,6 +64,3 @@ You can define new properties required to specific test.
 - Use `finalize` flag in `block_timeout_callback` decorator, if this function assert conditions to make test done. You can use many functions with `finalize` flag.
 - Use `log` property of `EchoTest` class to make logs in test, which display in full log-result of tests running.
 - Override `setup` method in test. Run all logic functions in it.
-
-
-
