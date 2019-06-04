@@ -17,6 +17,9 @@ Helper objects, like `GenesisConfig`, `Account` and etc.
 #### [framework/callbacks.py](./../networking_tests/framework/callbacks.py)
 Callback functions, that help to set block-timeout or rule of block-interval for running functions in tests.
 
+#### [framework/logger.py](./../networking_test/framework/logger.py)
+Logger class, to register test steps and display them in result of tests running. 
+
 #### [framework/color_text.py](./../networking_tests/framework/color_text.py)
 Helper functions for color text making.
 
@@ -37,7 +40,7 @@ You can set test properties when initialize it, for fine tuning:
 - `account authorization: list` - each element is number of node on which corresponding account would be authorized (correspondance condition = index of element).
 - `asset_distribution_type: string` - type of asset distribution between accounts in account generation process. Can be: 'random', 'equal', 'fixed'.
 
-Each test obtain properties, automated setted using `config.py`, like:
+Each test obtain properties, automated setted using `config.py`:
 
 - `api_access: string` - path to api-access config file.
 - `data_dir: string` - path to desired data directory.

@@ -32,6 +32,6 @@ To check available parameters to `test_runner.py` script:
 
     $ python3 test_runner.py --help
 
-### Writing tests
+### Detailed about Test-Framework
 
 To see information/examples about: framework, test writing or other utility objects: look <b>[section](docs/Framework.md)</b>.
