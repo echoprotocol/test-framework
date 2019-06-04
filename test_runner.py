@@ -3,7 +3,7 @@ import argparse
 from inspect import isclass
 from glob import glob
 from networking_tests.framework.echotest import EchoTest
-from networking_tests.framework.color_text import *
+from networking_tests.framework.color_text import text_bold, text_fail, text_pass
 from prettytable import PrettyTable
 from config import DATA_DIR, NODE_PATH, API_ACCESS
 
