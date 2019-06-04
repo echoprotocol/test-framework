@@ -32,6 +32,11 @@ To check available parameters to `test_runner.py` script:
 
     $ python3 test_runner.py --help
 
+`test_runner.py` script results will be similar to:
+
+
+![test_framework_output](/uploads/bb40f46f011ec94a0da19afd4f069f27/test_framework_output.png)
+
 ### Detailed about Test-Framework
 
 To see information/examples about: framework, test writing or other utility objects: look <b>[section](docs/Framework.md)</b>.
