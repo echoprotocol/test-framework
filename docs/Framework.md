@@ -70,4 +70,6 @@ You can define new properties required to specific test.
 
 ## Notes
 
-In test writing, remember that null-blocks can't contain transactions (useful for assertion conditions).
+- Remember that null-blocks can't contain transactions (useful for assertion conditions).
+- All test logic functions, which decorate by `block_timeout_callback` and `block_interval_callback` callbacks, can run only when non-null block start to produce and when balance claim operation is broadcasted (automate).
+
