@@ -59,11 +59,13 @@ class TestExampleNegative(EchoTest):
             'to': account_to.id,
             'amount': {
                 'asset_id': '1.3.0',
-                'amount': 1
+                'amount': 500
             }
         }
         tx.add_operation(self.echopy.config.operation_ids.TRANSFER, transfer_props)
         tx.add_signer(account_from.private_key)
+
+        # Broadcast transaction to network: used broadcast_transction_with_callback api-method
         tx.broadcast('1')
 
         # Get number of last block to make understandable logs

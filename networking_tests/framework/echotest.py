@@ -216,7 +216,7 @@ class EchoTest:
             self.setup()
             self._start_network()
             self._stop_network()
-        except KeyboardInterrupt:
+        except BaseException:
             self._stop_network()
 
     def _update_block_head(self):
@@ -235,61 +235,72 @@ class EchoTest:
     def _run_callbacks(self):
 
         def check_finalize_status(finalize_results):
-            return [result if isinstance(result, str) else True for result in finalize_results]
+            return [False if isinstance(result, str) else True for result in finalize_results]
 
-        def run_callback(callback):
-            assertion_error = None
+        def run_callback(callback, errors):
+            callback_status = True
             try:
                 callback()
-            except AssertionError as e:
-                assertion_error = "AssertionError: {}".format(e)
+            except Exception as e:
+                callback_status = "{}: {}".format(e.__class__.__name__, e)
+                if isinstance(errors, list):
+                    errors.append(callback_status)
 
-            return assertion_error
+            return callback_status
 
         has_finalize_callbacks = hasattr(self, '_finalize_callbacks')
         has_timeout_callbacks = hasattr(self, '_timeout_callbacks')
         has_interval_callbacks = hasattr(self, '_interval_callbacks')
-        assert has_finalize_callbacks
-        needed_total_finalizes = sum([len(self._finalize_callbacks[x]) for x in self._finalize_callbacks])
-        if has_timeout_callbacks or has_interval_callbacks:
-            self._head_block_num = 0
-            self._head_block_time = timestamp_to_datetime('1970-01-01T00:00:00')
-            self._head_block_year_diff = 0
-            while True:
-                sleep(0.5)
-                if self._update_block_head():
 
-                    if 0 not in self._timeout_callbacks:
-                        if has_timeout_callbacks:
-                            if self._head_block_num in self._timeout_callbacks and self._head_block_num > 1:
-                                for callback in self._timeout_callbacks[self._head_block_num]:
-                                    callback()
+        self._errors = []
+        if not has_finalize_callbacks:
+            self._errors.append("AttributeError: Test must have logic function decorated by 'block_timeout_callback'\
+                using 'finalize' flag")
+            self._done = True
+            self._status = check_finalize_status(self._errors)
+        else:
+            self._finalize_results = []
+            needed_total_finalizes = len(self._finalize_callbacks)
+            if has_timeout_callbacks or has_interval_callbacks:
+                self._head_block_num = 0
+                self._head_block_time = timestamp_to_datetime('1970-01-01T00:00:00')
+                self._head_block_year_diff = 0
+                while True:
+                    sleep(0.5)
+                    if self._update_block_head():
 
-                        if has_interval_callbacks:
-                            for block_delimiter in self._interval_callbacks:
-                                if not self._head_block_num % block_delimiter:
-                                    for callback in self._interval_callbacks[block_delimiter]:
-                                        callback()
+                        if 0 not in self._timeout_callbacks:
+                            if has_timeout_callbacks:
+                                if self._head_block_num in self._timeout_callbacks and self._head_block_num > 1:
+                                    for callback in self._timeout_callbacks[self._head_block_num]:
+                                        run_callback(callback, self._errors)
 
-                        for block_num in self._finalize_callbacks:
-                            if self._head_block_num in self._finalize_callbacks and self._head_block_num > 1:
-                                for callback in self._finalize_callbacks[self._head_block_num]:
-                                    self._finalize_results.append(run_callback(callback))
+                            if has_interval_callbacks:
+                                for block_delimiter in self._interval_callbacks:
+                                    if not self._head_block_num % block_delimiter:
+                                        for callback in self._interval_callbacks[block_delimiter]:
+                                            run_callback(callback, self._errors)
 
-                        if len(self._finalize_results) == needed_total_finalizes:
-                            self._done = True
-                            self._status = check_finalize_status(self._finalize_results)
+                            for block_num in self._finalize_callbacks:
+                                if self._head_block_num in self._finalize_callbacks and self._head_block_num > 1:
+                                    for callback in self._finalize_callbacks[self._head_block_num]:
+                                        finalize_result = run_callback(callback, self._errors)
+                                        self._finalize_results.append(finalize_result)
 
-                    if self._head_block_year_diff > 0:
-                        if has_timeout_callbacks:
-                            if 0 in self._timeout_callbacks:
-                                for callback in self._timeout_callbacks[0]:
-                                    callback()
+                            if len(self._finalize_results) == needed_total_finalizes:
+                                self._done = True
+                                self._status = check_finalize_status(self._finalize_results)
 
-                                del self._timeout_callbacks[0]
+                        if self._head_block_year_diff > 0:
+                            if has_timeout_callbacks:
+                                if 0 in self._timeout_callbacks:
+                                    for callback in self._timeout_callbacks[0]:
+                                        run_callback(callback, self._errors)
 
-                if self._done:
-                    break
+                                    del self._timeout_callbacks[0]
+
+                        if self._done:
+                            break
 
     @block_timeout_callback(block_num=0)
     def _claim_balances(self):

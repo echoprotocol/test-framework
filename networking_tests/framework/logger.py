@@ -23,5 +23,10 @@ class Logger:
         self._logs.append(['{} {}'.format('[CRITICAL]', msg), text_fail])
 
     def get_logger_steps(self, width=70):
+        return [color(msg_part).ljust(width) for msg, color in self._logs
+                for msg_part in self.text_wrap(msg, width)]
+
+    @staticmethod
+    def text_wrap(msg, width):
         wrapper = TextWrapper(width=width)
-        return [color(msg_part).ljust(width) for msg, color in self._logs for msg_part in wrapper.wrap(msg)]
+        return wrapper.wrap(msg)
