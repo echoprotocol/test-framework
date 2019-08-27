@@ -35,8 +35,14 @@ To check available parameters to `test_runner.py` script:
 `test_runner.py` script results will be similar to:
 
 
-![test_framework_output](/uploads/bb40f46f011ec94a0da19afd4f069f27/test_framework_output.png)
+![test_framework_output](https://user-images.githubusercontent.com/11243503/63785045-38570500-c8df-11e9-89db-ea667ef55848.png)
 
 ### Detailed about Test-Framework
 
 To see information/examples about: framework, test writing or other utility objects: look <b>[section](docs/Framework.md)</b>.
+
+### License
+
+A copy of the license is available in the repository's
+[LICENSE](LICENSE.txt) file.
+
