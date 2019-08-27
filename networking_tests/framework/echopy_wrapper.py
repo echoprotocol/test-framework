@@ -7,7 +7,7 @@ from echopy.echobase.account import PrivateKey
 from .node import Node
 from .objects import Account, AssetDistribution, EqualDistribution, RandomDistribution, FixedDistribution
 from .utils import ASSET_DISTRIBUTION_TYPES, DEFAULT_ASSET_DISTRIBUTION_TYPE,\
-    DEFAULT_ASSET_SYMBOL, DEFAULT_ASSET_ID
+    DEFAULT_ASSET_SYMBOL, DEFAULT_ASSET_ID, DEBUG_MODE
 
 
 class EchopyWrapper(Echo):
@@ -17,7 +17,7 @@ class EchopyWrapper(Echo):
     def connect(self, node):
         assert isinstance(node, (str, Node))
         url = 'ws://127.0.0.1:{}'.format(node.rpc_port)
-        self.api.connect(node) if isinstance(node, str) else self.api.connect(url)
+        self.api.connect(node, DEBUG_MODE) if isinstance(node, str) else self.api.connect(url, DEBUG_MODE)
 
     def generate_account(self, name=None, private_key=None, public_key=None, lifetime_status=True,
                          asset_amount=None, asset_symbol=DEFAULT_ASSET_SYMBOL):

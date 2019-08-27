@@ -50,23 +50,24 @@ class Node:
     def api_access(self, api_access):
         self._api_access = api_access
 
-    def generate_genesis(self, path_to_save):
+    def generate_genesis(self, data_dir):
         if not self.node_path:
             raise("'node path' is needed")
 
-        if not path_to_save:
-            raise ("'path_to_save' is needed")
+        if not data_dir:
+            raise ("'data_dir' is needed")
 
-        if os.path.exists(path_to_save):
-            os.remove(path_to_save)
+        if os.path.exists(data_dir):
+            os.rmdir(data_dir)
 
         command = 'screen -S node{} -d -m {}'.format(self.node_num, self.node_path)
-        command += ' --create-genesis-json {}'.format(path_to_save)
+        command += ' --data-dir {} --create-genesis-json'.format(data_dir)
         subprocess.Popen(command, shell=True)
+        return '{}/genesis.json'.format(data_dir)
 
     def authorize_account(self, account):
-        self.authorized_command += ' --account-info \[\\\"{}\\\",\\\"DET{}\\\"\]'.format(account.id,
-                                                                                         account.private_key)
+        self.authorized_command += ' --account-info \[\\\"{}\\\",\\\"{}\\\"\]'.format(account.id,
+                                                                                      account.private_key)
 
     def start(self):
 
@@ -77,7 +78,7 @@ class Node:
             self.seed_nodes = [self.seed_nodes]
 
         data_dir = '{}/node{}'.format(self.data_dir, self.node_num)
-        command = '{} --echorand'.format(self.node_path)
+        command = '{}'.format(self.node_path)
         command += ' --rpc-endpoint=127.0.0.1:{} --p2p-endpoint=127.0.0.1:{}'.format(self.rpc_port, self.p2p_port)
         command += ' --data-dir={} --genesis-json {} --api-access {}'.format(get_absolute_path(data_dir),
                                                                              get_absolute_path(self.genesis_path),
@@ -97,7 +98,6 @@ class Node:
         runfile_path = '{}/run{}.sh'.format(DEFAULT_TEMP_PATH, self.node_num)
         with open(runfile_path, 'w') as file:
             file.write(command)
-
         subprocess.Popen('screen -S node{} -d -m bash {}'.format(self.node_num, runfile_path), shell=True)
 
     def stop(self):

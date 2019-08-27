@@ -11,13 +11,13 @@ class GenesisConfig:
         if config_path:
             self.load_from_file(path=config_path)
 
-    def generate_from_node(self, node_path, path_to_save):
+    def generate_from_node(self, node_path, data_dir):
         node = Node(node_path=node_path, node_num=GENERATE_GENESIS_NODE_NUM)
-        node.generate_genesis(path_to_save)
+        genesis_path = node.generate_genesis(data_dir)
 
         sleep(1)
 
-        with open(path_to_save, 'r') as file:
+        with open(genesis_path, 'r') as file:
             genesis_config = json.loads(file.read())
 
         genesis_config['initial_parameters']['echorand_config'] = DEFAULT_GENESIS_ECHORAND_CONFIG
@@ -27,7 +27,7 @@ class GenesisConfig:
         genesis_config['initial_accounts'] = []
         genesis_config['initial_committee_candidates'] = []
 
-        with open(path_to_save, 'w') as file:
+        with open(genesis_path, 'w') as file:
             json.dump(genesis_config, file, indent=2)
 
     def load_from_file(self, path):
@@ -60,11 +60,11 @@ class Account:
 
     @property
     def genesis_account_format(self):
-        account_dict = {'name': self.name,
-                        'owner_key': self.public_key,
-                        'active_key': self.public_key,
-                        'ed_key': self.public_key,
-                        'is_lifetime_member': self.lifetime_status}
+        account_dict = {
+            'name': self.name,
+            'active_key': self.public_key,
+            'echorand_key': self.public_key
+        }
 
         return account_dict
 
@@ -95,9 +95,11 @@ class InitialBalance:
 
     @property
     def genesis_format(self):
-        return {'owner': self.owner,
-                'asset_symbol': self.asset_symbol,
-                'amount': self.amount}
+        return {
+            'owner': self.owner,
+            'asset_symbol': self.asset_symbol,
+            'amount': self.amount
+        }
 
 
 class AssetDistribution:

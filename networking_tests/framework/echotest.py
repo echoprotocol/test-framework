@@ -20,8 +20,9 @@ def timestamp_to_datetime(timestamp):
 class EchoTest:
 
     def __init__(self):
-        self._temp_genesis_path = '{}/genesis.json'.format(DEFAULT_TEMP_PATH)
-        os.makedirs(self._temp_genesis_path[:self._temp_genesis_path.rfind('/')], exist_ok=True)
+        self._temp_path = DEFAULT_TEMP_PATH
+        self._temp_genesis_path = '{}/genesis.json'.format(self._temp_path)
+        os.makedirs(self._temp_path, exist_ok=True)
 
         self.genesis = GenesisConfig()
 
@@ -154,7 +155,6 @@ class EchoTest:
                 name = account_info['name']
                 account = self.accounts[accounts_names.index(name)]
                 account.id = '1.2.{}'.format(6 + account_num)
-                account.lifetime_status = account_info['is_lifetime_member']
                 account.public_key = account_info['active_key']
                 if 'private_key' in account_info:
                     account.private_key = account_info['private_key']
@@ -211,13 +211,14 @@ class EchoTest:
 
     def run(self):
         try:
-            self.genesis.generate_from_node(node_path=self.node_path, path_to_save=self._temp_genesis_path)
+            self.genesis.generate_from_node(node_path=self.node_path, data_dir=self._temp_path)
             self.genesis.load_from_file(self._temp_genesis_path)
             self.setup()
             self._start_network()
             self._stop_network()
-        except BaseException:
+        except BaseException as e:
             self._stop_network()
+            raise e
 
     def _update_block_head(self):
         actual_head_block_num = self.echopy.api.database.get_dynamic_global_properties()['head_block_number']
@@ -291,13 +292,12 @@ class EchoTest:
                                 self._done = True
                                 self._status = check_finalize_status(self._finalize_results)
 
-                        if self._head_block_year_diff > 0:
-                            if has_timeout_callbacks:
-                                if 0 in self._timeout_callbacks:
-                                    for callback in self._timeout_callbacks[0]:
-                                        run_callback(callback, self._errors)
+                        if has_timeout_callbacks:
+                            if 0 in self._timeout_callbacks:
+                                for callback in self._timeout_callbacks[0]:
+                                    run_callback(callback, self._errors)
 
-                                    del self._timeout_callbacks[0]
+                                del self._timeout_callbacks[0]
 
                         if self._done:
                             break
@@ -307,8 +307,6 @@ class EchoTest:
         operation_id = self.echopy.config.operation_ids.BALANCE_CLAIM
         tx = self.echopy.create_transaction()
         for account in self.accounts:
-            props = {
-            }
             for initial_balance in account.initial_balances:
                 props = {
                     'deposit_to_account': account.id,
@@ -321,4 +319,5 @@ class EchoTest:
                 }
                 tx.add_operation(operation_id, props)
                 tx.add_signer(account.private_key)
-        tx.broadcast('1')
+        tx.sign()
+        tx.broadcast()
