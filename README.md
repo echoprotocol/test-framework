@@ -35,7 +35,7 @@ To check available parameters to `test_runner.py` script:
 `test_runner.py` script results will be similar to:
 
 
-![test_framework_output](https://user-images.githubusercontent.com/11243503/63785045-38570500-c8df-11e9-89db-ea667ef55848.png)
+![test_framework_output](https://user-images.githubusercontent.com/11243503/63849665-11054400-c982-11e9-9156-08365da1de7f.png)
 
 ### Detailed about Test-Framework
 
