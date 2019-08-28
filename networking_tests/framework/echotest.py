@@ -238,14 +238,17 @@ class EchoTest:
         def check_finalize_status(finalize_results):
             return [False if isinstance(result, str) else True for result in finalize_results]
 
-        def run_callback(callback, errors):
+        def run_callback(callback, errors, block_num):
             callback_status = True
             try:
                 callback()
             except Exception as e:
                 callback_status = "{}: {}".format(e.__class__.__name__, e)
+                callback_info = "[{}] ".format(block_num) if isinstance(block_num, str)\
+                    else "[Block {}] ".format(block_num)
+
                 if isinstance(errors, list):
-                    errors.append(callback_status)
+                    errors.append('{}{}'.format(callback_info, callback_status))
 
             return callback_status
 
@@ -255,8 +258,9 @@ class EchoTest:
 
         self._errors = []
         if not has_finalize_callbacks:
-            self._errors.append("AttributeError: Test must have logic function decorated by 'block_timeout_callback'\
-                using 'finalize' flag")
+            self._errors.append(
+                "[IncorrectTest] AttributeError: Test must have logic function decorated by 'block_timeout_callback' using 'finalize' flag"
+            )
             self._done = True
             self._status = check_finalize_status(self._errors)
         else:
@@ -274,18 +278,22 @@ class EchoTest:
                             if has_timeout_callbacks:
                                 if self._head_block_num in self._timeout_callbacks and self._head_block_num > 1:
                                     for callback in self._timeout_callbacks[self._head_block_num]:
-                                        run_callback(callback, self._errors)
+                                        run_callback(callback, self._errors, self._head_block_num)
 
                             if has_interval_callbacks:
                                 for block_delimiter in self._interval_callbacks:
                                     if not self._head_block_num % block_delimiter:
                                         for callback in self._interval_callbacks[block_delimiter]:
-                                            run_callback(callback, self._errors)
+                                            run_callback(callback, self._errors, self._head_block_num)
 
                             for block_num in self._finalize_callbacks:
                                 if self._head_block_num in self._finalize_callbacks and self._head_block_num > 1:
                                     for callback in self._finalize_callbacks[self._head_block_num]:
-                                        finalize_result = run_callback(callback, self._errors)
+                                        finalize_result = run_callback(
+                                            callback,
+                                            self._errors,
+                                            'Finalize condition'
+                                        )
                                         self._finalize_results.append(finalize_result)
 
                             if len(self._finalize_results) == needed_total_finalizes:
@@ -295,7 +303,7 @@ class EchoTest:
                         if has_timeout_callbacks:
                             if 0 in self._timeout_callbacks:
                                 for callback in self._timeout_callbacks[0]:
-                                    run_callback(callback, self._errors)
+                                    run_callback(callback, self._errors, self._head_block_num)
 
                                 del self._timeout_callbacks[0]
 

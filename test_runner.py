@@ -89,7 +89,7 @@ class TestRunner:
                                                 text_fail('Failed'),
                                                 text_fail('{}'.format(status_counter[False]))))
 
-    def run_tests(self, quiet=False, logs_width=70, description_width=100):
+    def run_tests(self, quiet=False, logs_width=70, description_width=90):
         tests = self._get_test_classes()
         self._logs = []
         self._internal_test_logs = []

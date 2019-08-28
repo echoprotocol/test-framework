@@ -48,29 +48,34 @@ class TestExampleNegative(EchoTest):
     def send_transaction(self):
 
         # Use echopy to build and broadcast transaction (transfer operation)
-        first_account_num = 13
-        second_account_num = 14
-        account_from = self.accounts[first_account_num]
-        account_to = self.accounts[second_account_num]
+        try:
+            first_account_num = 13
+            second_account_num = 14
+            account_from = self.accounts[first_account_num]
+            account_to = self.accounts[second_account_num]
 
-        tx = self.echopy.create_transaction()
-        transfer_props = {
-            'from': account_from.id,
-            'to': account_to.id,
-            'amount': {
-                'asset_id': '1.3.0',
-                'amount': 500
+            tx = self.echopy.create_transaction()
+            transfer_props = {
+                'from': account_from.id,
+                'to': account_to.id,
+                'amount': {
+                    'asset_id': '1.3.0',
+                    'amount': 500
+                }
             }
-        }
-        tx.add_operation(self.echopy.config.operation_ids.TRANSFER, transfer_props)
-        tx.add_signer(account_from.private_key)
+            tx.add_operation(self.echopy.config.operation_ids.TRANSFER, transfer_props)
+            tx.add_signer(account_from.private_key)
 
-        # Broadcast transaction to network: used broadcast_transction_with_callback api-method
-        tx.broadcast('1')
+            # Broadcast transaction to network: used broadcast_transction_with_callback api-method
+            tx.broadcast('1')
 
-        # Get number of last block to make understandable logs
-        head_block_num = self.echopy.api.database.get_dynamic_global_properties()['head_block_number']
-        self.log.info('Block: {} | Transaction broadcasted'.format(head_block_num))
+            # Get number of last block to make understandable logs
+            head_block_num = self.echopy.api.database.get_dynamic_global_properties()['head_block_number']
+            self.log.info('Block: {} | Transaction broadcast'.format(head_block_num))
+        except Exception as e:
+            head_block_num = self.echopy.api.database.get_dynamic_global_properties()['head_block_number']
+            self.log.warning('Block: {} | Transaction broadcast failed'.format(head_block_num))
+            raise e
 
     # Use block_timeout_callback to autorun this function once = when `block_num` block was produced
     # Use finalize flag (default=False) to exit the test after this callback (only for block_timeout_callback)
