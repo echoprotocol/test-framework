@@ -17,8 +17,8 @@ DEFAULT_NETWORK_NODE_COUNT = 2
 DEFAULT_ACCOUNT_COUNT = 0
 
 DEFAULT_GENESIS_ECHORAND_CONFIG = {
-    "_time_generate": 500,
-    "_time_net_1mb": 3000,
+    "_time_generate": 1000,
+    "_time_net_1mb": 2000,
     "_time_net_256b": 1500,
     "_creator_count": 2,
     "_verifier_count": 7,
@@ -42,7 +42,7 @@ DEFAULT_GENESIS_SIDECHAIN_CONFIG = {
         "gas": 1000000
     },
     "eth_update_addr_method": {
-        "method": "f1e3eb60",
+        "method": "7ff203ab",
         "gas": 1000000
     },
     "eth_withdraw_token_method": {
@@ -60,12 +60,13 @@ DEFAULT_GENESIS_SIDECHAIN_CONFIG = {
     "erc20_deposit_topic": "d6a701782aaded96fbe10d6bd46445ecef12edabc8eb5d3b15fb0e57f6395911",
     "erc20_withdraw_topic": "ec7288d868c54d049bda9254803b6ddaaf0317b76e81601c0af91a480592b272",
     "ETH_asset_id": "1.3.1",
-    "waiting_eth_blocks": 850,
+    "BTC_asset_id": "1.3.2",
     "fines": {
         "generate_eth_address": -10
     },
-    "waiting_blocks": 30,
-    "gas_price": 10000000000
+    "gas_price": 10000000000,
+    "satoshis_per_byte": 23,
+    "coefficient_waiting_blocks": 100
 }
 
 DEBUG_MODE = False
